@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -73,6 +73,28 @@ export function UserForm({ open, onClose, onSubmit, editUser }: UserFormProps) {
           sendInvitation: true,
         },
   });
+
+  // Actualizar el formulario cuando cambia editUser o se abre el diálogo
+  useEffect(() => {
+    if (open) {
+      if (isEditing && editUser) {
+        form.reset({
+          email: editUser.email,
+          displayName: editUser.display_name,
+          roles: editUser.roles || [],
+          isActive: editUser.is_active,
+        });
+      } else {
+        form.reset({
+          email: '',
+          password: '',
+          displayName: '',
+          roles: ['user'],
+          sendInvitation: true,
+        });
+      }
+    }
+  }, [open, isEditing, editUser, form]);
 
   const handleSubmit = async (data: CreateUserFormValues | UpdateUserFormValues) => {
     setLoading(true);
