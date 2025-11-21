@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Menu, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import {
   Sheet,
   SheetContent,
@@ -11,6 +13,8 @@ import {
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const navLinks = [
     { name: "Inicio", href: "#hero" },
@@ -18,6 +22,11 @@ const NavBar = () => {
     { name: "Nosotros", href: "#about" },
     { name: "Contacto", href: "#contact" },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const handleNavClick = (href: string) => {
     setIsOpen(false);
@@ -67,6 +76,35 @@ const NavBar = () => {
             >
               Reservar Cita
             </Button>
+            {user ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/dashboard')}
+                  className="text-sm"
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Salir
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/login')}
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Acceso
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -105,6 +143,43 @@ const NavBar = () => {
                   >
                     Reservar Cita
                   </Button>
+                  {user ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate('/dashboard');
+                        }}
+                      >
+                        Dashboard
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setIsOpen(false);
+                          handleSignOut();
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Salir
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setIsOpen(false);
+                        navigate('/login');
+                      }}
+                    >
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Acceso
+                    </Button>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
