@@ -61,9 +61,16 @@ const Contact = () => {
 
   // Cargar artistas activos
   useEffect(() => {
+    console.log('🔄 useEffect de artistas ejecutándose...');
+    
     const loadArtists = async () => {
       try {
         setLoadingArtists(true);
+        
+        // Log del estado de sesión
+        const { data: session } = await supabase.auth.getSession();
+        console.log('👤 Estado de sesión:', session?.session ? 'Autenticado' : 'No autenticado');
+        
         const { data, error } = await supabase
           .from('profiles')
           .select('id, display_name')
@@ -71,23 +78,25 @@ const Contact = () => {
           .order('display_name', { ascending: true });
 
         if (error) {
-          console.error('Error loading artists:', error);
+          console.error('❌ Error loading artists:', error);
           throw error;
         }
         
-        console.log('Artistas cargados:', data);
+        console.log('✅ Artistas cargados:', data);
+        console.log('📊 Cantidad de artistas:', data?.length || 0);
         
         if (!data || data.length === 0) {
-          console.warn('No se encontraron artistas activos');
+          console.warn('⚠️ No se encontraron artistas activos');
           toast.error('No hay artistas disponibles en este momento');
         }
         
         setArtists(data || []);
       } catch (error: any) {
-        console.error('Error en loadArtists:', error);
+        console.error('💥 Error en loadArtists:', error);
         toast.error(`Error al cargar los artistas: ${error.message || 'Error desconocido'}`);
         setArtists([]);
       } finally {
+        console.log('🏁 Finalizando carga de artistas');
         setLoadingArtists(false);
       }
     };
