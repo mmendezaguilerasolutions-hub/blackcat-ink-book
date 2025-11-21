@@ -75,27 +75,27 @@ All colors MUST be HSL.
   }
 
   /* Calendar availability indicators - líneas de color debajo del número */
-  .availability-high .rdp-day_button {
+  .availability-high button {
     @apply relative;
   }
   
-  .availability-high .rdp-day_button::after {
+  .availability-high button::after {
     @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-[hsl(var(--success))];
   }
   
-  .availability-medium .rdp-day_button {
+  .availability-medium button {
     @apply relative;
   }
   
-  .availability-medium .rdp-day_button::after {
+  .availability-medium button::after {
     @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-[hsl(var(--warning))];
   }
   
-  .availability-low .rdp-day_button {
+  .availability-low button {
     @apply relative;
   }
   
-  .availability-low .rdp-day_button::after {
+  .availability-low button::after {
     @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-[hsl(var(--destructive))];
   }
 }
