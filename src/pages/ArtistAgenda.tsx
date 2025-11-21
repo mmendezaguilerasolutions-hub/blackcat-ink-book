@@ -4,13 +4,12 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, List, Ban, ArrowLeft, Image } from 'lucide-react';
+import { Calendar, Clock, List, Ban, ArrowLeft } from 'lucide-react';
 import { ServicesManager } from '@/components/artist/ServicesManager';
 import { AvailabilityManager } from '@/components/artist/AvailabilityManager';
 import { AppointmentsCalendar } from '@/components/artist/AppointmentsCalendar';
 import { BlockedDatesManager } from '@/components/artist/BlockedDatesManager';
 import { AppointmentsCalendarView } from '@/components/artist/AppointmentsCalendarView';
-import { MyPortfolio } from '@/components/artist/MyPortfolio';
 
 export default function ArtistAgenda() {
   const { user } = useAuth();
@@ -52,7 +51,7 @@ export default function ArtistAgenda() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="calendar" className="gap-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Calendario</span>
@@ -72,10 +71,6 @@ export default function ArtistAgenda() {
           <TabsTrigger value="blocked" className="gap-2">
             <Ban className="h-4 w-4" />
             <span className="hidden sm:inline">Bloqueos</span>
-          </TabsTrigger>
-          <TabsTrigger value="portfolio" className="gap-2">
-            <Image className="h-4 w-4" />
-            <span className="hidden sm:inline">Portfolio</span>
           </TabsTrigger>
         </TabsList>
 
@@ -97,10 +92,6 @@ export default function ArtistAgenda() {
 
         <TabsContent value="blocked" className="space-y-4">
           <BlockedDatesManager artistId={user.id} />
-        </TabsContent>
-
-        <TabsContent value="portfolio" className="space-y-4">
-          <MyPortfolio artistId={user.id} />
         </TabsContent>
       </Tabs>
     </div>
