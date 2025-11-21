@@ -133,7 +133,8 @@ const Contact = () => {
         fetchAvailableSlots(selectedArtist, dateStr, service.duration_minutes);
       }
     }
-  }, [selectedArtist, selectedDate, selectedService, services, fetchAvailableSlots]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedArtist, selectedDate, selectedService, services]);
 
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
