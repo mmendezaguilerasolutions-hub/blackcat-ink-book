@@ -442,17 +442,21 @@ const Contact = () => {
               ) : (
                 <>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                    {slots.map((slot, index) => (
-                      <Button
-                        key={index}
-                        type="button"
-                        variant={watch("time") === slot.start_time ? "default" : "outline"}
-                        className="h-auto py-3 px-2 text-sm"
-                        onClick={() => setValue("time", slot.start_time)}
-                      >
-                        {slot.start_time}
-                      </Button>
-                    ))}
+                    {slots.map((slot, index) => {
+                      // Formatear hora sin segundos (HH:mm)
+                      const formattedTime = slot.start_time.substring(0, 5);
+                      return (
+                        <Button
+                          key={index}
+                          type="button"
+                          variant={watch("time") === slot.start_time ? "default" : "outline"}
+                          className="h-auto py-3 px-2 text-sm"
+                          onClick={() => setValue("time", slot.start_time)}
+                        >
+                          {formattedTime}
+                        </Button>
+                      );
+                    })}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     {slots.length} horario{slots.length !== 1 ? 's' : ''} disponible{slots.length !== 1 ? 's' : ''}
