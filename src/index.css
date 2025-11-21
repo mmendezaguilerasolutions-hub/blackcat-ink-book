@@ -74,13 +74,13 @@ All colors MUST be HSL.
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
-  /* Calendar availability indicators */
+  /* Calendar availability indicators - líneas de color debajo del número */
   .availability-high .rdp-day_button {
     @apply relative;
   }
   
   .availability-high .rdp-day_button::after {
-    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))];
+    @apply content-[''] absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-[hsl(var(--success))];
   }
   
   .availability-medium .rdp-day_button {
@@ -88,7 +88,7 @@ All colors MUST be HSL.
   }
   
   .availability-medium .rdp-day_button::after {
-    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(var(--warning))];
+    @apply content-[''] absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-[hsl(var(--warning))];
   }
   
   .availability-low .rdp-day_button {
@@ -96,7 +96,7 @@ All colors MUST be HSL.
   }
   
   .availability-low .rdp-day_button::after {
-    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(var(--destructive))];
+    @apply content-[''] absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-[hsl(var(--destructive))];
   }
 }
 
