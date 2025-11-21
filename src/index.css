@@ -80,7 +80,7 @@ All colors MUST be HSL.
   }
   
   .availability-high .rdp-day_button::after {
-    @apply content-[''] absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-[hsl(var(--success))];
+    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-[hsl(var(--success))];
   }
   
   .availability-medium .rdp-day_button {
@@ -88,7 +88,7 @@ All colors MUST be HSL.
   }
   
   .availability-medium .rdp-day_button::after {
-    @apply content-[''] absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-[hsl(var(--warning))];
+    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-[hsl(var(--warning))];
   }
   
   .availability-low .rdp-day_button {
@@ -96,7 +96,7 @@ All colors MUST be HSL.
   }
   
   .availability-low .rdp-day_button::after {
-    @apply content-[''] absolute bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-[hsl(var(--destructive))];
+    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-[hsl(var(--destructive))];
   }
 }
 
