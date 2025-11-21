@@ -2,38 +2,39 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export interface AvailableSlot {
-  start_time: string;
-  end_time: string;
-  available_count: number;
+export interface DailySlotCount {
+  date: string;
+  slot_count: number;
 }
 
-export function useAvailableSlots() {
-  const [slots, setSlots] = useState<AvailableSlot[]>([]);
+export function useDailySlotCounts() {
+  const [counts, setCounts] = useState<DailySlotCount[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchAvailableSlots = async (
+  const fetchDailySlotCounts = async (
     artistId: string,
-    date: string,
+    startDate: string,
+    endDate: string,
     durationMinutes: number
   ) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_available_slots', {
+      const { data, error } = await supabase.rpc('get_daily_slot_counts', {
         p_artist_id: artistId,
-        p_date: date,
+        p_start_date: startDate,
+        p_end_date: endDate,
         p_duration_minutes: durationMinutes,
       });
 
       if (error) throw error;
-      setSlots(data || []);
+      setCounts(data || []);
       return { success: true, data: data || [] };
     } catch (error) {
-      console.error('Error fetching available slots:', error);
+      console.error('Error fetching daily slot counts:', error);
       toast({
         title: 'Error',
-        description: 'No se pudieron cargar los horarios disponibles',
+        description: 'No se pudieron cargar los conteos de disponibilidad',
         variant: 'destructive',
       });
       return { success: false, data: [] };
@@ -43,8 +44,8 @@ export function useAvailableSlots() {
   };
 
   return {
-    slots,
+    counts,
     loading,
-    fetchAvailableSlots,
+    fetchDailySlotCounts,
   };
 }

@@ -86,7 +86,7 @@ export function AvailabilityManager({ artistId }: AvailabilityManagerProps) {
           <div>
             <CardTitle>Mi Disponibilidad</CardTitle>
             <CardDescription>
-              Define tus horarios de trabajo habituales por día de la semana
+              Define tus horarios. Puedes añadir múltiples rangos por día para crear pausas (ej: 9:00-13:00 y 15:00-19:00)
             </CardDescription>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -101,7 +101,7 @@ export function AvailabilityManager({ artistId }: AvailabilityManagerProps) {
                 <DialogHeader>
                   <DialogTitle>Nuevo Horario</DialogTitle>
                   <DialogDescription>
-                    Añade un rango horario para un día específico
+                    Añade rangos horarios para uno o varios días. Puedes crear pausas añadiendo múltiples rangos separados para el mismo día.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
