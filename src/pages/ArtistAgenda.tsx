@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, List, Ban } from 'lucide-react';
+import { Calendar, Clock, List, Ban, ArrowLeft } from 'lucide-react';
 import { ServicesManager } from '@/components/artist/ServicesManager';
 import { AvailabilityManager } from '@/components/artist/AvailabilityManager';
 import { AppointmentsCalendar } from '@/components/artist/AppointmentsCalendar';
@@ -11,6 +13,7 @@ import { AppointmentsCalendarView } from '@/components/artist/AppointmentsCalend
 
 export default function ArtistAgenda() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('calendar');
 
   if (!user) {
@@ -29,10 +32,22 @@ export default function ArtistAgenda() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Mi Agenda</h1>
-        <p className="text-muted-foreground">
-          Gestiona tus citas, servicios y disponibilidad
-        </p>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/dashboard')}
+            className="hover:bg-accent"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Mi Agenda</h1>
+            <p className="text-muted-foreground">
+              Gestiona tus citas, servicios y disponibilidad
+            </p>
+          </div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
