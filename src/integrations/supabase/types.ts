@@ -14,6 +14,186 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          artist_id: string
+          client_email: string
+          client_name: string
+          client_phone: string
+          created_at: string | null
+          date: string
+          end_time: string
+          id: string
+          notes: string | null
+          service_id: string
+          start_time: string
+          status: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          client_email: string
+          client_name: string
+          client_phone: string
+          created_at?: string | null
+          date: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          service_id: string
+          start_time: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          created_at?: string | null
+          date?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          service_id?: string
+          start_time?: string
+          status?: Database["public"]["Enums"]["appointment_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "artist_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_availability: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          end_time: string
+          id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_availability_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_blocked_dates: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          date: string
+          end_time: string | null
+          id: string
+          is_blocked: boolean | null
+          reason: string | null
+          start_time: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          date: string
+          end_time?: string | null
+          id?: string
+          is_blocked?: boolean | null
+          reason?: string | null
+          start_time?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          date?: string
+          end_time?: string | null
+          id?: string
+          is_blocked?: boolean | null
+          reason?: string | null
+          start_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_blocked_dates_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_services: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          duration_minutes: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_services_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -94,6 +274,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_available_slots: {
+        Args: {
+          p_artist_id: string
+          p_date: string
+          p_duration_minutes: number
+        }
+        Returns: {
+          end_time: string
+          start_time: string
+        }[]
+      }
       get_users_with_roles: {
         Args: never
         Returns: {
@@ -116,6 +307,7 @@ export type Database = {
     }
     Enums: {
       app_role: "superadmin" | "admin" | "staff" | "user"
+      appointment_status: "pending" | "confirmed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +436,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "admin", "staff", "user"],
+      appointment_status: ["pending", "confirmed", "cancelled"],
     },
   },
 } as const
