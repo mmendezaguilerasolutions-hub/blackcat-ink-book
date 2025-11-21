@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { User, LogOut, UserPlus } from 'lucide-react';
+import { User, LogOut, UserPlus, Users } from 'lucide-react';
 
 interface Profile {
   display_name: string;
@@ -229,13 +229,23 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button
-                  onClick={() => navigate('/register')}
-                  className="bg-brand-whiteSmoke text-brand-black hover:bg-brand-whiteSmoke/90"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Registrar Nuevo Usuario
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => navigate('/admin/users')}
+                    className="w-full bg-brand-whiteSmoke text-brand-black hover:bg-brand-whiteSmoke/90"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Gestión de Usuarios
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/register')}
+                    variant="outline"
+                    className="w-full border-brand-ink/50 text-brand-whiteSmoke hover:bg-brand-graphite"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Registrar Nuevo Usuario (Legacy)
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
