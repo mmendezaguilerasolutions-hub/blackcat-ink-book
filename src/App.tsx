@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
 import PortfolioAdmin from "./pages/PortfolioAdmin";
 import ArtistAgenda from "./pages/ArtistAgenda";
+import MySpace from "./pages/MySpace";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ArtistAgenda />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-space"
+              element={
+                <ProtectedRoute>
+                  <MySpace />
                 </ProtectedRoute>
               }
             />

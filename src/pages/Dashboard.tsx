@@ -217,20 +217,28 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Mi Agenda */}
+          {/* Mi Espacio */}
           <Card className="bg-brand-graphite/95 border-brand-ink/30">
             <CardHeader>
               <CardTitle className="text-brand-whiteSmoke">
                 Mi Espacio
               </CardTitle>
               <CardDescription className="text-brand-whiteSmoke/70">
-                Gestiona tu agenda y citas
+                Gestiona tu perfil y portfolio
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-2">
+              <Button
+                onClick={() => navigate('/my-space')}
+                className="w-full bg-brand-whiteSmoke text-brand-black hover:bg-brand-whiteSmoke/90"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Mi Perfil y Portfolio
+              </Button>
               <Button
                 onClick={() => navigate('/artist/agenda')}
-                className="w-full bg-brand-whiteSmoke text-brand-black hover:bg-brand-whiteSmoke/90"
+                variant="outline"
+                className="w-full border-brand-ink/50 text-brand-whiteSmoke hover:bg-brand-graphite"
               >
                 <Calendar className="w-4 h-4 mr-2" />
                 Mi Agenda
