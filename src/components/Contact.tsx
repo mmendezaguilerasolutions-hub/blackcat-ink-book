@@ -74,7 +74,7 @@ const Contact = () => {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, display_name')
-          .eq('is_active', true)
+          .or('is_active.is.null,is_active.eq.true')
           .order('display_name', { ascending: true });
 
         if (error) {
