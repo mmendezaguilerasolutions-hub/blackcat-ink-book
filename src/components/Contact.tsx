@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,6 +13,8 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Send } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
 const contactSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -21,28 +23,132 @@ const contactSchema = z.object({
   artist: z.string().min(1, "Selecciona un artista"),
   service: z.string().min(1, "Selecciona un servicio"),
   date: z.date({ required_error: "Selecciona una fecha" }),
+  time: z.string().min(1, "Selecciona un horario"),
   message: z.string().optional(),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
+interface Artist {
+  id: string;
+  display_name: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  duration_minutes: number;
+}
+
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const { slots, loading: slotsLoading, fetchAvailableSlots } = useAvailableSlots();
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
 
   const selectedDate = watch("date");
+  const selectedArtist = watch("artist");
+  const selectedService = watch("service");
+
+  // Cargar artistas activos
+  useEffect(() => {
+    const loadArtists = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('is_active', true)
+        .order('display_name');
+
+      if (data && !error) {
+        setArtists(data);
+      }
+    };
+
+    loadArtists();
+  }, []);
+
+  // Cargar servicios del artista seleccionado
+  useEffect(() => {
+    if (!selectedArtist) {
+      setServices([]);
+      return;
+    }
+
+    const loadServices = async () => {
+      const { data, error } = await supabase
+        .from('artist_services')
+        .select('id, name, duration_minutes')
+        .eq('artist_id', selectedArtist)
+        .eq('is_active', true)
+        .order('name');
+
+      if (data && !error) {
+        setServices(data);
+      }
+    };
+
+    loadServices();
+  }, [selectedArtist]);
+
+  // Cargar slots disponibles cuando se selecciona fecha y servicio
+  useEffect(() => {
+    if (selectedArtist && selectedDate && selectedService) {
+      const service = services.find(s => s.id === selectedService);
+      if (service) {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        fetchAvailableSlots(selectedArtist, dateStr, service.duration_minutes);
+      }
+    }
+  }, [selectedArtist, selectedDate, selectedService, services]);
 
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     try {
-      // Aquí irá la llamada a Supabase Edge Function
-      console.log("Form data:", data);
+      const service = services.find(s => s.id === data.service);
+      if (!service) {
+        toast.error("Servicio no encontrado");
+        return;
+      }
+
+      // Calcular end_time basado en la duración del servicio
+      const [hours, minutes] = data.time.split(':').map(Number);
+      const startDate = new Date();
+      startDate.setHours(hours, minutes, 0, 0);
+      const endDate = new Date(startDate.getTime() + service.duration_minutes * 60000);
+      const endTime = format(endDate, 'HH:mm');
+
+      const { error } = await supabase
+        .from('appointments')
+        .insert([{
+          artist_id: data.artist,
+          service_id: data.service,
+          client_name: data.name,
+          client_email: data.email,
+          client_phone: data.phone,
+          date: format(data.date, 'yyyy-MM-dd'),
+          start_time: data.time,
+          end_time: endTime,
+          notes: data.message || null,
+          status: 'pending',
+        }]);
+
+      if (error) throw error;
+
       toast.success("¡Solicitud enviada! Te contactaremos pronto.");
-    } catch (error) {
-      toast.error("Error al enviar la solicitud");
+      
+      // Reset form
+      setValue('artist', '');
+      setValue('service', '');
+      setValue('date', undefined as any);
+      setValue('time', '');
+      setValue('message', '');
+    } catch (error: any) {
+      console.error('Error submitting:', error);
+      toast.error(error.message || "Error al enviar la solicitud");
     } finally {
       setIsSubmitting(false);
     }
@@ -111,14 +217,21 @@ const Contact = () => {
             {/* Artist */}
             <div className="space-y-2">
               <Label htmlFor="artist">Artista *</Label>
-              <Select onValueChange={(value) => setValue("artist", value)}>
+              <Select onValueChange={(value) => {
+                setValue("artist", value);
+                setValue("service", "");
+                setValue("date", undefined as any);
+                setValue("time", "");
+              }}>
                 <SelectTrigger className={errors.artist ? "border-destructive" : ""}>
                   <SelectValue placeholder="Selecciona un artista" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="alex">Alex Rivera</SelectItem>
-                  <SelectItem value="luna">Luna García</SelectItem>
-                  <SelectItem value="marco">Marco Rossi</SelectItem>
+                  {artists.map((artist) => (
+                    <SelectItem key={artist.id} value={artist.id}>
+                      {artist.display_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {errors.artist && (
@@ -129,15 +242,29 @@ const Contact = () => {
             {/* Service */}
             <div className="space-y-2">
               <Label htmlFor="service">Servicio *</Label>
-              <Select onValueChange={(value) => setValue("service", value)}>
+              <Select 
+                onValueChange={(value) => {
+                  setValue("service", value);
+                  setValue("date", undefined as any);
+                  setValue("time", "");
+                }}
+                disabled={!selectedArtist}
+              >
                 <SelectTrigger className={errors.service ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Tipo de tatuaje" />
+                  <SelectValue placeholder={
+                    !selectedArtist 
+                      ? "Primero selecciona un artista" 
+                      : services.length === 0
+                      ? "No hay servicios disponibles"
+                      : "Selecciona un servicio"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="small">Tatuaje Pequeño</SelectItem>
-                  <SelectItem value="medium">Tatuaje Mediano</SelectItem>
-                  <SelectItem value="large">Tatuaje Grande</SelectItem>
-                  <SelectItem value="cover">Cover-up</SelectItem>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name} ({service.duration_minutes} min)
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {errors.service && (
@@ -153,6 +280,7 @@ const Contact = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
+                  disabled={!selectedService}
                   className={`w-full justify-start text-left font-normal ${
                     errors.date ? "border-destructive" : ""
                   }`}
@@ -165,7 +293,12 @@ const Contact = () => {
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => date && setValue("date", date)}
+                  onSelect={(date) => {
+                    if (date) {
+                      setValue("date", date);
+                      setValue("time", "");
+                    }
+                  }}
                   disabled={(date) => date < new Date()}
                   locale={es}
                 />
@@ -175,6 +308,34 @@ const Contact = () => {
               <p className="text-sm text-destructive">{errors.date.message}</p>
             )}
           </div>
+
+          {/* Time Slots */}
+          {selectedDate && selectedService && (
+            <div className="space-y-2">
+              <Label>Horario Disponible *</Label>
+              {slotsLoading ? (
+                <p className="text-sm text-muted-foreground">Cargando horarios...</p>
+              ) : slots.length === 0 ? (
+                <p className="text-sm text-destructive">No hay horarios disponibles para esta fecha</p>
+              ) : (
+                <Select onValueChange={(value) => setValue("time", value)}>
+                  <SelectTrigger className={errors.time ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Selecciona un horario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {slots.map((slot, index) => (
+                      <SelectItem key={index} value={slot.start_time}>
+                        {slot.start_time} - {slot.end_time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {errors.time && (
+                <p className="text-sm text-destructive">{errors.time.message}</p>
+              )}
+            </div>
+          )}
 
           {/* Message */}
           <div className="space-y-2">
@@ -191,7 +352,7 @@ const Contact = () => {
             type="submit"
             size="lg"
             className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !selectedArtist || !selectedService || !selectedDate || !watch("time")}
           >
             {isSubmitting ? (
               "Enviando..."

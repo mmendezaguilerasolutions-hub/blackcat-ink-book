@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
+import ArtistAgenda from "./pages/ArtistAgenda";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireRole="superadmin">
                   <SuperAdminUsers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/artist/agenda"
+              element={
+                <ProtectedRoute>
+                  <ArtistAgenda />
                 </ProtectedRoute>
               }
             />
