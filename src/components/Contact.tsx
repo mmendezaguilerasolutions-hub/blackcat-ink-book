@@ -15,6 +15,7 @@ import { CalendarIcon, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { useDisabledDates } from "@/hooks/useDisabledDates";
 
 const contactSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -44,8 +45,9 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const { slots, loading: slotsLoading, fetchAvailableSlots } = useAvailableSlots();
-
+  const [loadingArtists, setLoadingArtists] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(false);
+  
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
@@ -53,18 +55,33 @@ const Contact = () => {
   const selectedDate = watch("date");
   const selectedArtist = watch("artist");
   const selectedService = watch("service");
+  
+  const { slots, loading: slotsLoading, fetchAvailableSlots } = useAvailableSlots();
+  const { isDateDisabled } = useDisabledDates(selectedArtist);
 
   // Cargar artistas activos
   useEffect(() => {
     const loadArtists = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name')
-        .eq('is_active', true)
-        .order('display_name');
+      try {
+        setLoadingArtists(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .eq('is_active', true)
+          .order('display_name');
 
-      if (data && !error) {
-        setArtists(data);
+        if (error) throw error;
+        
+        if (data && data.length === 0) {
+          toast.error('No hay artistas disponibles en este momento');
+        }
+        
+        setArtists(data || []);
+      } catch (error) {
+        console.error('Error loading artists:', error);
+        toast.error('Error al cargar los artistas');
+      } finally {
+        setLoadingArtists(false);
       }
     };
 
@@ -75,19 +92,32 @@ const Contact = () => {
   useEffect(() => {
     if (!selectedArtist) {
       setServices([]);
+      setLoadingServices(false);
       return;
     }
 
     const loadServices = async () => {
-      const { data, error } = await supabase
-        .from('artist_services')
-        .select('id, name, duration_minutes')
-        .eq('artist_id', selectedArtist)
-        .eq('is_active', true)
-        .order('name');
+      try {
+        setLoadingServices(true);
+        const { data, error } = await supabase
+          .from('artist_services')
+          .select('id, name, duration_minutes')
+          .eq('artist_id', selectedArtist)
+          .eq('is_active', true)
+          .order('name');
 
-      if (data && !error) {
-        setServices(data);
+        if (error) throw error;
+        
+        if (data && data.length === 0) {
+          toast.error('Este artista no tiene servicios disponibles');
+        }
+        
+        setServices(data || []);
+      } catch (error) {
+        console.error('Error loading services:', error);
+        toast.error('Error al cargar los servicios');
+      } finally {
+        setLoadingServices(false);
       }
     };
 
@@ -103,7 +133,7 @@ const Contact = () => {
         fetchAvailableSlots(selectedArtist, dateStr, service.duration_minutes);
       }
     }
-  }, [selectedArtist, selectedDate, selectedService, services]);
+  }, [selectedArtist, selectedDate, selectedService, services, fetchAvailableSlots]);
 
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
@@ -217,14 +247,23 @@ const Contact = () => {
             {/* Artist */}
             <div className="space-y-2">
               <Label htmlFor="artist">Artista *</Label>
-              <Select onValueChange={(value) => {
-                setValue("artist", value);
-                setValue("service", "");
-                setValue("date", undefined as any);
-                setValue("time", "");
-              }}>
+              <Select 
+                onValueChange={(value) => {
+                  setValue("artist", value);
+                  setValue("service", "");
+                  setValue("date", undefined as any);
+                  setValue("time", "");
+                }}
+                disabled={loadingArtists || artists.length === 0}
+              >
                 <SelectTrigger className={errors.artist ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Selecciona un artista" />
+                  <SelectValue placeholder={
+                    loadingArtists 
+                      ? "Cargando artistas..." 
+                      : artists.length === 0
+                      ? "No hay artistas disponibles"
+                      : "Selecciona un artista"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {artists.map((artist) => (
@@ -248,14 +287,16 @@ const Contact = () => {
                   setValue("date", undefined as any);
                   setValue("time", "");
                 }}
-                disabled={!selectedArtist}
+                disabled={!selectedArtist || loadingServices || services.length === 0}
               >
                 <SelectTrigger className={errors.service ? "border-destructive" : ""}>
                   <SelectValue placeholder={
                     !selectedArtist 
                       ? "Primero selecciona un artista" 
+                      : loadingServices
+                      ? "Cargando servicios..."
                       : services.length === 0
-                      ? "No hay servicios disponibles"
+                      ? "Este artista no tiene servicios disponibles"
                       : "Selecciona un servicio"
                   } />
                 </SelectTrigger>
@@ -299,7 +340,17 @@ const Contact = () => {
                       setValue("time", "");
                     }
                   }}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date) => {
+                    // Deshabilitar fechas pasadas
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (date < today) return true;
+                    
+                    // Deshabilitar fechas sin disponibilidad o bloqueadas
+                    if (selectedArtist && isDateDisabled(date)) return true;
+                    
+                    return false;
+                  }}
                   locale={es}
                 />
               </PopoverContent>
@@ -314,22 +365,34 @@ const Contact = () => {
             <div className="space-y-2">
               <Label>Horario Disponible *</Label>
               {slotsLoading ? (
-                <p className="text-sm text-muted-foreground">Cargando horarios...</p>
+                <div className="flex items-center justify-center p-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <p className="ml-2 text-sm text-muted-foreground">Cargando horarios disponibles...</p>
+                </div>
               ) : slots.length === 0 ? (
-                <p className="text-sm text-destructive">No hay horarios disponibles para esta fecha</p>
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm text-destructive">
+                    No hay horarios disponibles para esta fecha. Por favor, selecciona otro día.
+                  </p>
+                </div>
               ) : (
-                <Select onValueChange={(value) => setValue("time", value)}>
-                  <SelectTrigger className={errors.time ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Selecciona un horario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {slots.map((slot, index) => (
-                      <SelectItem key={index} value={slot.start_time}>
-                        {slot.start_time} - {slot.end_time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <>
+                  <Select onValueChange={(value) => setValue("time", value)}>
+                    <SelectTrigger className={errors.time ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Selecciona un horario" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {slots.map((slot, index) => (
+                        <SelectItem key={index} value={slot.start_time}>
+                          {slot.start_time} - {slot.end_time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {slots.length} horario{slots.length !== 1 ? 's' : ''} disponible{slots.length !== 1 ? 's' : ''}
+                  </p>
+                </>
               )}
               {errors.time && (
                 <p className="text-sm text-destructive">{errors.time.message}</p>
