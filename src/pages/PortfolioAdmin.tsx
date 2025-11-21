@@ -1,11 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePortfolioAdmin } from '@/hooks/usePortfolioWorks';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { ArrowLeft, Check, X, Star, StarOff, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Check, X, Star, StarOff, Trash2, RefreshCw, Eye, EyeOff, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +34,157 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Componente individual de trabajo sortable
+function SortableWorkCard({ work, onApprove, onToggleFeatured, onToggleVisibility, onDelete }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: work.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <Card ref={setNodeRef} style={style} className="overflow-hidden">
+      <div className="relative aspect-square">
+        <img
+          src={work.image_url}
+          alt={work.title || work.style}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute top-2 left-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="cursor-grab active:cursor-grabbing bg-background/80 hover:bg-background/90"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="absolute top-2 right-2 flex flex-col gap-2">
+          {work.is_approved && (
+            <Badge variant="default" className="bg-green-600">
+              Aprobado
+            </Badge>
+          )}
+          {work.is_featured && (
+            <Badge variant="default" className="bg-yellow-600">
+              Destacado
+            </Badge>
+          )}
+          {!work.is_visible_in_landing && (
+            <Badge variant="default" className="bg-red-600">
+              Oculto
+            </Badge>
+          )}
+        </div>
+      </div>
+      <CardHeader>
+        <CardTitle className="text-lg">{work.style}</CardTitle>
+        <CardDescription>
+          por {work.artist?.display_name || 'Desconocido'}
+        </CardDescription>
+        {work.title && (
+          <p className="text-sm text-muted-foreground mt-1">{work.title}</p>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge variant="outline">{work.size}</Badge>
+          <span>•</span>
+          <span>{new Date(work.created_at).toLocaleDateString()}</span>
+        </div>
+
+        {/* Acciones */}
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <Button
+            variant={work.is_approved ? 'outline' : 'default'}
+            size="sm"
+            onClick={() => onApprove(work.id, !work.is_approved)}
+          >
+            {work.is_approved ? (
+              <>
+                <X className="h-4 w-4 mr-1" />
+                Rechazar
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-1" />
+                Aprobar
+              </>
+            )}
+          </Button>
+          <Button
+            variant={work.is_visible_in_landing ? 'outline' : 'default'}
+            size="sm"
+            onClick={() => onToggleVisibility(work.id, !work.is_visible_in_landing)}
+          >
+            {work.is_visible_in_landing ? (
+              <>
+                <EyeOff className="h-4 w-4 mr-1" />
+                Ocultar
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-1" />
+                Mostrar
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onToggleFeatured(work.id, !work.is_featured)}
+          >
+            {work.is_featured ? (
+              <>
+                <StarOff className="h-4 w-4 mr-1" />
+                Normal
+              </>
+            ) : (
+              <>
+                <Star className="h-4 w-4 mr-1" />
+                Destacar
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(work.id)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive mr-1" />
+            Eliminar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function PortfolioAdmin() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading: checkingRole } = useSuperAdmin();
-  const { works, loading, approveWork, toggleFeatured, deleteWork, refetch } = usePortfolioAdmin();
+  const { works, loading, approveWork, toggleFeatured, deleteWork, toggleVisibility, reorderWorks, refetch } = usePortfolioAdmin();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workToDelete, setWorkToDelete] = useState<string | null>(null);
+  const [localWorks, setLocalWorks] = useState(works);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   if (checkingRole) {
     return (
@@ -51,6 +213,11 @@ export default function PortfolioAdmin() {
     );
   }
 
+  // Sincronizar works con localWorks cuando cambien
+  useEffect(() => {
+    setLocalWorks(works);
+  }, [works]);
+
   const handleDeleteClick = (workId: string) => {
     setWorkToDelete(workId);
     setDeleteDialogOpen(true);
@@ -61,6 +228,24 @@ export default function PortfolioAdmin() {
       await deleteWork(workToDelete);
       setDeleteDialogOpen(false);
       setWorkToDelete(null);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setLocalWorks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        
+        // Actualizar el orden en el backend
+        reorderWorks(newOrder);
+        
+        return newOrder;
+      });
     }
   };
 
@@ -141,87 +326,29 @@ export default function PortfolioAdmin() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {works.map((work) => (
-              <Card key={work.id} className="overflow-hidden">
-                <div className="relative aspect-square">
-                  <img
-                    src={work.image_url}
-                    alt={work.title || work.style}
-                    className="w-full h-full object-cover"
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={localWorks.map((w) => w.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {localWorks.map((work) => (
+                  <SortableWorkCard
+                    key={work.id}
+                    work={work}
+                    onApprove={approveWork}
+                    onToggleFeatured={toggleFeatured}
+                    onToggleVisibility={toggleVisibility}
+                    onDelete={handleDeleteClick}
                   />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    {work.is_approved && (
-                      <Badge variant="default" className="bg-green-600">
-                        Aprobado
-                      </Badge>
-                    )}
-                    {work.is_featured && (
-                      <Badge variant="default" className="bg-yellow-600">
-                        Destacado
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <CardHeader>
-                  <CardTitle className="text-lg">{work.style}</CardTitle>
-                  <CardDescription>
-                    por {work.artist?.display_name || 'Desconocido'}
-                  </CardDescription>
-                  {work.title && (
-                    <p className="text-sm text-muted-foreground mt-1">{work.title}</p>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge variant="outline">{work.size}</Badge>
-                    <span>•</span>
-                    <span>{new Date(work.created_at).toLocaleDateString()}</span>
-                  </div>
-
-                  {/* Acciones */}
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant={work.is_approved ? 'outline' : 'default'}
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => approveWork(work.id, !work.is_approved)}
-                    >
-                      {work.is_approved ? (
-                        <>
-                          <X className="h-4 w-4 mr-1" />
-                          Ocultar
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4 mr-1" />
-                          Aprobar
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleFeatured(work.id, !work.is_featured)}
-                    >
-                      {work.is_featured ? (
-                        <StarOff className="h-4 w-4" />
-                      ) : (
-                        <Star className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteClick(work.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
