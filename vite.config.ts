@@ -15,4 +15,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['react-big-calendar', 'react-big-calendar/lib/addons/dragAndDrop'],
+  },
 }));
