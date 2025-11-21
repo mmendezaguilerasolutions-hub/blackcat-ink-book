@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -14,13 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 interface AvailabilityManagerProps {
   artistId: string;
@@ -39,8 +33,8 @@ const WEEKDAYS = [
 export function AvailabilityManager({ artistId }: AvailabilityManagerProps) {
   const { availability, loading, createAvailability, deleteAvailability } = useArtistAvailability(artistId);
   const [open, setOpen] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>([1]);
   const [formData, setFormData] = useState({
-    weekday: 1,
     start_time: '09:00',
     end_time: '18:00',
   });
@@ -48,19 +42,30 @@ export function AvailabilityManager({ artistId }: AvailabilityManagerProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    await createAvailability({
-      artist_id: artistId,
-      weekday: formData.weekday,
-      start_time: formData.start_time,
-      end_time: formData.end_time,
-    });
+    // Crear disponibilidad para cada día seleccionado
+    for (const weekday of selectedDays) {
+      await createAvailability({
+        artist_id: artistId,
+        weekday,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+      });
+    }
 
     setOpen(false);
+    setSelectedDays([1]);
     setFormData({
-      weekday: 1,
       start_time: '09:00',
       end_time: '18:00',
     });
+  };
+
+  const toggleDay = (day: number) => {
+    setSelectedDays(prev => 
+      prev.includes(day) 
+        ? prev.filter(d => d !== day)
+        : [...prev, day]
+    );
   };
 
   const handleDelete = async (id: string) => {
@@ -101,22 +106,27 @@ export function AvailabilityManager({ artistId }: AvailabilityManagerProps) {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="weekday">Día de la semana</Label>
-                    <Select
-                      value={formData.weekday.toString()}
-                      onValueChange={(value) => setFormData({ ...formData, weekday: parseInt(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un día" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {WEEKDAYS.map((day) => (
-                          <SelectItem key={day.value} value={day.value.toString()}>
+                    <Label>Días de la semana (selecciona varios)</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {WEEKDAYS.map((day) => (
+                        <div key={day.value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`day-${day.value}`}
+                            checked={selectedDays.includes(day.value)}
+                            onCheckedChange={() => toggleDay(day.value)}
+                          />
+                          <Label
+                            htmlFor={`day-${day.value}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
                             {day.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedDays.length === 0 && (
+                      <p className="text-sm text-destructive">Selecciona al menos un día</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -145,7 +155,9 @@ export function AvailabilityManager({ artistId }: AvailabilityManagerProps) {
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit">Crear</Button>
+                  <Button type="submit" disabled={selectedDays.length === 0}>
+                    Crear para {selectedDays.length} día{selectedDays.length !== 1 ? 's' : ''}
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
