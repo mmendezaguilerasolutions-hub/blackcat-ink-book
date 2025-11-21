@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { User, LogOut, UserPlus, Users } from 'lucide-react';
+import { User, LogOut, UserPlus, Users, Calendar } from 'lucide-react';
 
 interface Profile {
   display_name: string;
@@ -214,6 +214,27 @@ const Dashboard = () => {
                   </span>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Mi Agenda */}
+          <Card className="bg-brand-graphite/95 border-brand-ink/30">
+            <CardHeader>
+              <CardTitle className="text-brand-whiteSmoke">
+                Mi Espacio
+              </CardTitle>
+              <CardDescription className="text-brand-whiteSmoke/70">
+                Gestiona tu agenda y citas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => navigate('/artist/agenda')}
+                className="w-full bg-brand-whiteSmoke text-brand-black hover:bg-brand-whiteSmoke/90"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Mi Agenda
+              </Button>
             </CardContent>
           </Card>
 
