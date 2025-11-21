@@ -72,7 +72,7 @@ const Contact = () => {
         console.log('👤 Estado de sesión:', session?.session ? 'Autenticado' : 'No autenticado');
         
         const { data, error } = await supabase
-          .from('profiles')
+          .from('artist_public_info')
           .select('id, display_name')
           .order('display_name', { ascending: true });
 
