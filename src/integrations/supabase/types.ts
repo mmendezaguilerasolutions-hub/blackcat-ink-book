@@ -229,6 +229,59 @@ export type Database = {
           },
         ]
       }
+      portfolio_works: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          is_approved: boolean | null
+          is_featured: boolean | null
+          order_index: number | null
+          size: string
+          style: string
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          is_approved?: boolean | null
+          is_featured?: boolean | null
+          order_index?: number | null
+          size?: string
+          style: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_approved?: boolean | null
+          is_featured?: boolean | null
+          order_index?: number | null
+          size?: string
+          style?: string
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_works_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
