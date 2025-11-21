@@ -281,8 +281,21 @@ export type Database = {
           p_duration_minutes: number
         }
         Returns: {
+          available_count: number
           end_time: string
           start_time: string
+        }[]
+      }
+      get_daily_slot_counts: {
+        Args: {
+          p_artist_id: string
+          p_duration_minutes: number
+          p_end_date: string
+          p_start_date: string
+        }
+        Returns: {
+          date: string
+          slot_count: number
         }[]
       }
       get_users_with_roles: {

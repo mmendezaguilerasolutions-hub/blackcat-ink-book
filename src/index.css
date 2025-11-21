@@ -43,6 +43,9 @@ All colors MUST be HSL.
     --border: var(--brand-ink);
     --input: var(--brand-ink);
     --ring: var(--brand-whiteSmoke);
+    
+    --success: 142 71% 45%;
+    --warning: 48 96% 53%;
 
     --radius: 0.5rem;
   }
@@ -69,6 +72,31 @@ All colors MUST be HSL.
 
   .container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Calendar availability indicators */
+  .availability-high .rdp-day_button {
+    @apply relative;
+  }
+  
+  .availability-high .rdp-day_button::after {
+    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))];
+  }
+  
+  .availability-medium .rdp-day_button {
+    @apply relative;
+  }
+  
+  .availability-medium .rdp-day_button::after {
+    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(var(--warning))];
+  }
+  
+  .availability-low .rdp-day_button {
+    @apply relative;
+  }
+  
+  .availability-low .rdp-day_button::after {
+    @apply content-[''] absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[hsl(var(--destructive))];
   }
 }
 

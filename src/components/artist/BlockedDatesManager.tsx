@@ -88,50 +88,80 @@ export function BlockedDatesManager({ artistId }: BlockedDatesManagerProps) {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Fecha</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required
-                    />
-                  </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Fecha</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              required
+            />
+          </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="is_blocked"
-                      checked={formData.is_blocked}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_blocked: checked })}
-                    />
-                    <Label htmlFor="is_blocked" className="cursor-pointer">
-                      {formData.is_blocked ? 'Día bloqueado (no disponible)' : 'Horario especial (disponible)'}
-                    </Label>
-                  </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_blocked"
+              checked={formData.is_blocked}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_blocked: checked })}
+            />
+            <Label htmlFor="is_blocked" className="cursor-pointer">
+              {formData.is_blocked ? 'Día/Horas bloqueadas (no disponible)' : 'Horario especial (disponible)'}
+            </Label>
+          </div>
 
-                  {!formData.is_blocked && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="start_time">Hora inicio</Label>
-                        <Input
-                          id="start_time"
-                          type="time"
-                          value={formData.start_time}
-                          onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="end_time">Hora fin</Label>
-                        <Input
-                          id="end_time"
-                          type="time"
-                          value={formData.end_time}
-                          onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  )}
+          {formData.is_blocked && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Deja las horas en blanco para bloquear el día completo, o especifica un rango horario para bloquear solo esas horas.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">Hora inicio (opcional)</Label>
+                  <Input
+                    id="start_time"
+                    type="time"
+                    value={formData.start_time}
+                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">Hora fin (opcional)</Label>
+                  <Input
+                    id="end_time"
+                    type="time"
+                    value={formData.end_time}
+                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!formData.is_blocked && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_time">Hora inicio</Label>
+                <Input
+                  id="start_time"
+                  type="time"
+                  value={formData.start_time}
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  required={!formData.is_blocked}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_time">Hora fin</Label>
+                <Input
+                  id="end_time"
+                  type="time"
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                  required={!formData.is_blocked}
+                />
+              </div>
+            </div>
+          )}
 
                   <div className="space-y-2">
                     <Label htmlFor="reason">Motivo (opcional)</Label>
@@ -192,6 +222,12 @@ export function BlockedDatesManager({ artistId }: BlockedDatesManagerProps) {
                     {!blocked.is_blocked && blocked.start_time && blocked.end_time && (
                       <p className="text-sm text-muted-foreground">
                         Horario especial: {blocked.start_time} - {blocked.end_time}
+                      </p>
+                    )}
+                    
+                    {blocked.is_blocked && blocked.start_time && blocked.end_time && (
+                      <p className="text-sm text-muted-foreground">
+                        Horas bloqueadas: {blocked.start_time} - {blocked.end_time}
                       </p>
                     )}
                     
