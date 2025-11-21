@@ -73,37 +73,6 @@ All colors MUST be HSL.
   .container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
-
-  /* Calendar availability indicators - líneas de color debajo de cada número del día */
-  .availability-high button,
-  .availability-high > button {
-    @apply relative pb-2;
-  }
-  
-  .availability-high button::after,
-  .availability-high > button::after {
-    @apply content-[''] absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-1 rounded-full bg-[hsl(var(--success))];
-  }
-  
-  .availability-medium button,
-  .availability-medium > button {
-    @apply relative pb-2;
-  }
-  
-  .availability-medium button::after,
-  .availability-medium > button::after {
-    @apply content-[''] absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-1 rounded-full bg-[hsl(var(--warning))];
-  }
-  
-  .availability-low button,
-  .availability-low > button {
-    @apply relative pb-2;
-  }
-  
-  .availability-low button::after,
-  .availability-low > button::after {
-    @apply content-[''] absolute bottom-0 left-1/2 -translate-x-1/2 w-7 h-1 rounded-full bg-[hsl(var(--destructive))];
-  }
 }
 
 @layer utilities {

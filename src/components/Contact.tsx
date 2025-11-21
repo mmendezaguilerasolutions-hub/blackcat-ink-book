@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 import { useDisabledDates } from "@/hooks/useDisabledDates";
-import { useDailySlotCounts } from "@/hooks/useDailySlotCounts";
 
 const contactSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -59,7 +58,6 @@ const Contact = () => {
   
   const { slots, loading: slotsLoading, fetchAvailableSlots } = useAvailableSlots();
   const { isDateDisabled } = useDisabledDates(selectedArtist);
-  const { counts, fetchDailySlotCounts } = useDailySlotCounts();
 
   // Cargar artistas activos
   useEffect(() => {
@@ -89,26 +87,6 @@ const Contact = () => {
 
     loadArtists();
   }, []);
-
-  // Cargar conteos de slots cuando se selecciona artista y servicio
-  useEffect(() => {
-    if (selectedArtist && selectedService) {
-      const service = services.find(s => s.id === selectedService);
-      if (service) {
-        const today = new Date();
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 90);
-        
-        fetchDailySlotCounts(
-          selectedArtist,
-          format(today, 'yyyy-MM-dd'),
-          format(endDate, 'yyyy-MM-dd'),
-          service.duration_minutes
-        );
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedArtist, selectedService, services]);
 
   // Cargar servicios del artista seleccionado
   useEffect(() => {
@@ -374,50 +352,9 @@ const Contact = () => {
                     
                     return false;
                   }}
-                  modifiers={{
-                    highAvailability: (date) => {
-                      const dateStr = format(date, 'yyyy-MM-dd');
-                      const count = counts.find(c => c.date === dateStr);
-                      return count ? count.slot_count > 10 : false;
-                    },
-                    mediumAvailability: (date) => {
-                      const dateStr = format(date, 'yyyy-MM-dd');
-                      const count = counts.find(c => c.date === dateStr);
-                      return count ? count.slot_count >= 6 && count.slot_count <= 10 : false;
-                    },
-                    lowAvailability: (date) => {
-                      const dateStr = format(date, 'yyyy-MM-dd');
-                      const count = counts.find(c => c.date === dateStr);
-                      return count ? count.slot_count >= 1 && count.slot_count <= 5 : false;
-                    },
-                  }}
-                  modifiersClassNames={{
-                    highAvailability: 'availability-high',
-                    mediumAvailability: 'availability-medium',
-                    lowAvailability: 'availability-low',
-                  }}
                   locale={es}
                   className="pointer-events-auto"
                 />
-                {selectedArtist && selectedService && (
-                  <div className="p-3 border-t text-sm">
-                    <p className="font-medium mb-2">Espacios disponibles:</p>
-                    <div className="flex gap-4 flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-1 rounded-full bg-[hsl(var(--success))]" />
-                        <span className="text-xs">+10</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-1 rounded-full bg-[hsl(var(--warning))]" />
-                        <span className="text-xs">6-10</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-1 rounded-full bg-[hsl(var(--destructive))]" />
-                        <span className="text-xs">1-5</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </PopoverContent>
             </Popover>
             {errors.date && (
