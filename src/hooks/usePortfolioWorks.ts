@@ -12,6 +12,7 @@ export interface PortfolioWork {
   size: 'large' | 'tall' | 'wide' | 'medium';
   is_featured: boolean;
   is_approved: boolean;
+  is_visible_in_landing: boolean;
   order_index: number;
   created_at: string;
   artist?: {
@@ -33,6 +34,7 @@ export function usePortfolioWorks() {
           artist:profiles!artist_id(display_name)
         `)
         .eq('is_approved', true)
+        .eq('is_visible_in_landing', true)
         .order('is_featured', { ascending: false })
         .order('order_index', { ascending: true })
         .order('created_at', { ascending: false });
@@ -68,6 +70,7 @@ export function usePortfolioAdmin() {
           *,
           artist:profiles!artist_id(display_name)
         `)
+        .order('order_index', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -132,6 +135,54 @@ export function usePortfolioAdmin() {
     }
   };
 
+  const toggleVisibility = async (workId: string, visible: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('portfolio_works')
+        .update({ is_visible_in_landing: visible })
+        .eq('id', workId);
+
+      if (error) throw error;
+      
+      toast.success(visible ? 'Visible en landing' : 'Oculto de landing');
+      await fetchAllWorks();
+    } catch (error: any) {
+      console.error('Error updating visibility:', error);
+      toast.error('Error al actualizar visibilidad');
+    }
+  };
+
+  const updateOrder = async (workId: string, newOrder: number) => {
+    try {
+      const { error } = await supabase
+        .from('portfolio_works')
+        .update({ order_index: newOrder })
+        .eq('id', workId);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error updating order:', error);
+      toast.error('Error al actualizar orden');
+      throw error;
+    }
+  };
+
+  const reorderWorks = async (reorderedWorks: PortfolioWork[]) => {
+    try {
+      // Actualizar todos los order_index en paralelo
+      const updates = reorderedWorks.map((work, index) =>
+        updateOrder(work.id, index)
+      );
+      
+      await Promise.all(updates);
+      toast.success('Orden actualizado');
+      await fetchAllWorks();
+    } catch (error: any) {
+      console.error('Error reordering works:', error);
+      toast.error('Error al reordenar');
+    }
+  };
+
   useEffect(() => {
     fetchAllWorks();
   }, []);
@@ -142,6 +193,8 @@ export function usePortfolioAdmin() {
     refetch: fetchAllWorks,
     approveWork,
     toggleFeatured,
-    deleteWork
+    deleteWork,
+    toggleVisibility,
+    reorderWorks
   };
 }

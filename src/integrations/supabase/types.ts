@@ -238,6 +238,7 @@ export type Database = {
           image_url: string
           is_approved: boolean | null
           is_featured: boolean | null
+          is_visible_in_landing: boolean | null
           order_index: number | null
           size: string
           style: string
@@ -252,6 +253,7 @@ export type Database = {
           image_url: string
           is_approved?: boolean | null
           is_featured?: boolean | null
+          is_visible_in_landing?: boolean | null
           order_index?: number | null
           size?: string
           style: string
@@ -266,6 +268,7 @@ export type Database = {
           image_url?: string
           is_approved?: boolean | null
           is_featured?: boolean | null
+          is_visible_in_landing?: boolean | null
           order_index?: number | null
           size?: string
           style?: string
