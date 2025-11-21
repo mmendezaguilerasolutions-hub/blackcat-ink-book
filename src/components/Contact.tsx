@@ -397,21 +397,22 @@ const Contact = () => {
                     lowAvailability: 'availability-low',
                   }}
                   locale={es}
+                  className="pointer-events-auto"
                 />
                 {selectedArtist && selectedService && (
                   <div className="p-3 border-t text-sm">
                     <p className="font-medium mb-2">Espacios disponibles:</p>
-                    <div className="flex gap-3 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-[hsl(var(--success))]" />
+                    <div className="flex gap-4 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-1 rounded-full bg-[hsl(var(--success))]" />
                         <span className="text-xs">+10</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-[hsl(var(--warning))]" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-1 rounded-full bg-[hsl(var(--warning))]" />
                         <span className="text-xs">6-10</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-[hsl(var(--destructive))]" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-1 rounded-full bg-[hsl(var(--destructive))]" />
                         <span className="text-xs">1-5</span>
                       </div>
                     </div>
