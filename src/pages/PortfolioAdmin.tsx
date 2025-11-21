@@ -186,6 +186,11 @@ export default function PortfolioAdmin() {
     })
   );
 
+  // Sincronizar works con localWorks cuando cambien
+  useEffect(() => {
+    setLocalWorks(works);
+  }, [works]);
+
   if (checkingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -213,10 +218,6 @@ export default function PortfolioAdmin() {
     );
   }
 
-  // Sincronizar works con localWorks cuando cambien
-  useEffect(() => {
-    setLocalWorks(works);
-  }, [works]);
 
   const handleDeleteClick = (workId: string) => {
     setWorkToDelete(workId);
