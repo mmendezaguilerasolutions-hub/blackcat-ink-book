@@ -68,18 +68,25 @@ const Contact = () => {
           .from('profiles')
           .select('id, display_name')
           .eq('is_active', true)
-          .order('display_name');
+          .order('display_name', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error loading artists:', error);
+          throw error;
+        }
         
-        if (data && data.length === 0) {
+        console.log('Artistas cargados:', data);
+        
+        if (!data || data.length === 0) {
+          console.warn('No se encontraron artistas activos');
           toast.error('No hay artistas disponibles en este momento');
         }
         
         setArtists(data || []);
-      } catch (error) {
-        console.error('Error loading artists:', error);
-        toast.error('Error al cargar los artistas');
+      } catch (error: any) {
+        console.error('Error en loadArtists:', error);
+        toast.error(`Error al cargar los artistas: ${error.message || 'Error desconocido'}`);
+        setArtists([]);
       } finally {
         setLoadingArtists(false);
       }
