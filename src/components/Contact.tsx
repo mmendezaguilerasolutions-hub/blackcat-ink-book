@@ -150,7 +150,7 @@ const Contact = () => {
       const startDate = new Date();
       startDate.setHours(hours, minutes, 0, 0);
       const endDate = new Date(startDate.getTime() + service.duration_minutes * 60000);
-      const endTime = format(endDate, 'HH:mm');
+      const endTime = format(endDate, 'HH:mm:ss');
 
       const { error } = await supabase
         .from('appointments')
@@ -164,12 +164,12 @@ const Contact = () => {
           start_time: data.time,
           end_time: endTime,
           notes: data.message || null,
-          status: 'pending',
+          status: 'confirmed',
         }]);
 
       if (error) throw error;
 
-      toast.success("¡Solicitud enviada! Te contactaremos pronto.");
+      toast.success("¡Cita confirmada! Te contactaremos para confirmar los detalles.");
       
       // Reset form
       setValue('artist', '');
