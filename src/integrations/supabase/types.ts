@@ -26,6 +26,7 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          is_active: boolean | null
           linkedin_url: string | null
           phone: string | null
           twitter_url: string | null
@@ -42,6 +43,7 @@ export type Database = {
           facebook_url?: string | null
           id: string
           instagram_url?: string | null
+          is_active?: boolean | null
           linkedin_url?: string | null
           phone?: string | null
           twitter_url?: string | null
@@ -58,6 +60,7 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          is_active?: boolean | null
           linkedin_url?: string | null
           phone?: string | null
           twitter_url?: string | null
@@ -91,6 +94,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_users_with_roles: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          email_confirmed_at: string
+          is_active: boolean
+          roles: string[]
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
