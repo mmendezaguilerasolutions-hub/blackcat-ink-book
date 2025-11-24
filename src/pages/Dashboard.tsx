@@ -274,6 +274,13 @@ const Dashboard = () => {
                     Gestión de Portfolio
                   </Button>
                   <Button
+                    onClick={() => navigate('/admin/artists')}
+                    className="w-full bg-brand-whiteSmoke text-brand-black hover:bg-brand-whiteSmoke/90"
+                  >
+                    <Users className="w-4 w-4 mr-2" />
+                    Gestión de Avatares
+                  </Button>
+                  <Button
                     onClick={() => navigate('/register')}
                     variant="outline"
                     className="w-full border-brand-ink/50 text-brand-whiteSmoke hover:bg-brand-graphite"
