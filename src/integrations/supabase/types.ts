@@ -161,6 +161,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_avatar_approved: boolean | null
+          is_visible: boolean | null
+          order_index: number | null
           updated_at: string | null
         }
         Insert: {
@@ -170,6 +172,8 @@ export type Database = {
           id: string
           is_active?: boolean | null
           is_avatar_approved?: boolean | null
+          is_visible?: boolean | null
+          order_index?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -179,6 +183,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_avatar_approved?: boolean | null
+          is_visible?: boolean | null
+          order_index?: number | null
           updated_at?: string | null
         }
         Relationships: [
