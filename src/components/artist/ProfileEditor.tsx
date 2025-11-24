@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Save, RefreshCw } from 'lucide-react';
+import { Save, RefreshCw, Upload, Camera } from 'lucide-react';
 
 interface ProfileEditorProps {
   userId: string;
@@ -20,11 +21,13 @@ interface ProfileData {
   linkedin_url: string;
   facebook_url: string;
   twitter_url: string;
+  avatar_url: string;
 }
 
 export function ProfileEditor({ userId }: ProfileEditorProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState<ProfileData>({
     display_name: '',
     email: '',
@@ -33,8 +36,10 @@ export function ProfileEditor({ userId }: ProfileEditorProps) {
     instagram_url: '',
     linkedin_url: '',
     facebook_url: '',
-    twitter_url: ''
+    twitter_url: '',
+    avatar_url: ''
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProfile();
@@ -60,7 +65,8 @@ export function ProfileEditor({ userId }: ProfileEditorProps) {
           instagram_url: data.instagram_url || '',
           linkedin_url: data.linkedin_url || '',
           facebook_url: data.facebook_url || '',
-          twitter_url: data.twitter_url || ''
+          twitter_url: data.twitter_url || '',
+          avatar_url: data.avatar_url || ''
         });
       }
     } catch (error: any) {
@@ -68,6 +74,63 @@ export function ProfileEditor({ userId }: ProfileEditorProps) {
       toast.error('Error al cargar perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo se permiten imágenes');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('La imagen no debe superar 2MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Eliminar avatar anterior si existe
+      if (formData.avatar_url) {
+        const oldPath = formData.avatar_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('avatars').remove([oldPath]);
+      }
+
+      // Subir nuevo avatar
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Obtener URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Actualizar perfil con nueva URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      setFormData({ ...formData, avatar_url: publicUrl });
+      toast.success('Avatar actualizado. Pendiente de aprobación del administrador.');
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Error al subir avatar');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -123,13 +186,57 @@ export function ProfileEditor({ userId }: ProfileEditorProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Información Personal</CardTitle>
+        <CardTitle>Mi Perfil</CardTitle>
         <CardDescription>
-          Actualiza tu información de perfil
+          Actualiza tu información personal y redes sociales
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Avatar */}
+          <div className="space-y-2">
+            <Label>Foto de Perfil</Label>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={formData.avatar_url} alt={formData.display_name} />
+                <AvatarFallback>
+                  <Camera className="h-8 w-8 text-muted-foreground" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Cambiar Avatar
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Máximo 2MB. El avatar será visible en la landing después de aprobación del administrador.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Información Básica */}
           <div className="space-y-4">
             <div className="space-y-2">

@@ -2,6 +2,7 @@ import NavBar from "@/components/NavBar";
 import Hero from "@/components/Hero";
 import Statistics from "@/components/Statistics";
 import PortfolioGallery from "@/components/PortfolioGallery";
+import { ArtistsCarousel } from "@/components/ArtistsCarousel";
 import About from "@/components/About";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -13,6 +14,7 @@ const Index = () => {
       <Hero />
       <Statistics />
       <PortfolioGallery />
+      <ArtistsCarousel />
       <About />
       <Contact />
       <Footer />

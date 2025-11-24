@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import SuperAdminUsers from "./pages/SuperAdminUsers";
 import PortfolioAdmin from "./pages/PortfolioAdmin";
+import ArtistsAdmin from "./pages/ArtistsAdmin";
 import ArtistAgenda from "./pages/ArtistAgenda";
 import MySpace from "./pages/MySpace";
 import NotFound from "./pages/NotFound";
@@ -56,6 +57,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireRole="superadmin">
                   <PortfolioAdmin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/artists"
+              element={
+                <ProtectedRoute requireRole="superadmin">
+                  <ArtistsAdmin />
                 </ProtectedRoute>
               }
             />
