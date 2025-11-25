@@ -48,11 +48,11 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         brand: {
+          white: "hsl(var(--brand-white))",
+          lightGrey: "hsl(var(--brand-light-grey))",
+          grey: "hsl(var(--brand-grey))",
+          darkGrey: "hsl(var(--brand-dark-grey))",
           black: "hsl(var(--brand-black))",
-          graphite: "hsl(var(--brand-graphite))",
-          whiteSmoke: "hsl(var(--brand-whiteSmoke))",
-          ink: "hsl(var(--brand-ink))",
-          crimson: "hsl(var(--brand-crimson))",
         },
       },
       fontFamily: {
