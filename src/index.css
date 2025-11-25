@@ -8,41 +8,41 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Black Cat Tattoo Studio Brand Colors */
-    --brand-black: 0 0% 5%;
-    --brand-graphite: 0 0% 12%;
-    --brand-whiteSmoke: 0 0% 96%;
-    --brand-ink: 0 0% 30%;
-    --brand-crimson: 356 70% 41%;
+    /* Brand Colors - White, Grey, Black Palette */
+    --brand-white: 0 0% 100%;
+    --brand-light-grey: 0 0% 95%;
+    --brand-grey: 0 0% 85%;
+    --brand-dark-grey: 0 0% 40%;
+    --brand-black: 0 0% 10%;
 
-    /* Shadcn UI Variables - Dark Theme */
-    --background: var(--brand-black);
-    --foreground: var(--brand-whiteSmoke);
+    /* Shadcn UI Variables - Light Theme */
+    --background: var(--brand-white);
+    --foreground: var(--brand-black);
 
-    --card: var(--brand-graphite);
-    --card-foreground: var(--brand-whiteSmoke);
+    --card: var(--brand-light-grey);
+    --card-foreground: var(--brand-black);
 
-    --popover: var(--brand-graphite);
-    --popover-foreground: var(--brand-whiteSmoke);
+    --popover: var(--brand-white);
+    --popover-foreground: var(--brand-black);
 
-    --primary: var(--brand-whiteSmoke);
-    --primary-foreground: var(--brand-black);
+    --primary: var(--brand-black);
+    --primary-foreground: var(--brand-white);
 
-    --secondary: var(--brand-ink);
-    --secondary-foreground: var(--brand-whiteSmoke);
+    --secondary: var(--brand-grey);
+    --secondary-foreground: var(--brand-black);
 
-    --muted: var(--brand-ink);
-    --muted-foreground: 0 0% 65%;
+    --muted: var(--brand-light-grey);
+    --muted-foreground: var(--brand-dark-grey);
 
-    --accent: var(--brand-crimson);
-    --accent-foreground: var(--brand-whiteSmoke);
+    --accent: var(--brand-dark-grey);
+    --accent-foreground: var(--brand-white);
 
-    --destructive: var(--brand-crimson);
-    --destructive-foreground: var(--brand-whiteSmoke);
+    --destructive: 0 0% 20%;
+    --destructive-foreground: var(--brand-white);
 
-    --border: var(--brand-ink);
-    --input: var(--brand-ink);
-    --ring: var(--brand-whiteSmoke);
+    --border: var(--brand-grey);
+    --input: var(--brand-grey);
+    --ring: var(--brand-black);
     
     --success: 142 71% 45%;
     --warning: 48 96% 53%;
