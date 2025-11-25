@@ -10,10 +10,10 @@ All colors MUST be HSL.
   :root {
     /* Brand Colors - White, Grey, Black Palette */
     --brand-white: 0 0% 100%;
-    --brand-light-grey: 0 0% 95%;
-    --brand-grey: 0 0% 85%;
-    --brand-dark-grey: 0 0% 40%;
-    --brand-black: 0 0% 10%;
+    --brand-light-grey: 0 0% 96%;
+    --brand-grey: 0 0% 90%;
+    --brand-dark-grey: 0 0% 50%;
+    --brand-black: 0 0% 0%;
 
     /* Shadcn UI Variables - Light Theme */
     --background: var(--brand-white);
