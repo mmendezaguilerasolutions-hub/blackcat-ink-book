@@ -172,8 +172,20 @@ function SortableWorkCard({ work, onApprove, onToggleFeatured, onToggleVisibilit
   );
 }
 
+// Patrón fijo de tamaños del mosaico (se repite)
+const MOSAIC_PATTERN = [
+  'large',   // 0: 2x2
+  'medium',  // 1: 1x1
+  'medium',  // 2: 1x1
+  'tall',    // 3: 1x2
+  'medium',  // 4: 1x1
+  'wide',    // 5: 2x1
+  'medium',  // 6: 1x1
+  'medium',  // 7: 1x1
+];
+
 // Componente de mosaico sortable
-function SortableMosaicItem({ work, onApprove, onToggleFeatured, onToggleVisibility, onDelete }: any) {
+function SortableMosaicItem({ work, index, onApprove, onToggleFeatured, onToggleVisibility, onDelete }: any) {
   const {
     attributes,
     listeners,
@@ -182,6 +194,9 @@ function SortableMosaicItem({ work, onApprove, onToggleFeatured, onToggleVisibil
     transition,
     isDragging,
   } = useSortable({ id: work.id });
+
+  // Obtener el tamaño fijo según la posición en el patrón
+  const patternSize = MOSAIC_PATTERN[index % MOSAIC_PATTERN.length];
 
   const getSizeClasses = (size: string) => {
     switch (size) {
@@ -206,7 +221,7 @@ function SortableMosaicItem({ work, onApprove, onToggleFeatured, onToggleVisibil
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative overflow-hidden rounded-lg ${getSizeClasses(work.size)} cursor-pointer`}
+      className={`group relative overflow-hidden rounded-lg ${getSizeClasses(patternSize)} cursor-pointer`}
     >
       <img
         src={work.image_url}
@@ -484,17 +499,25 @@ export default function PortfolioAdmin() {
             >
               {viewMode === 'mosaic' ? (
                 /* Vista de Mosaico - como se ve en el landing */
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {localWorks.map((work) => (
-                    <SortableMosaicItem
-                      key={work.id}
-                      work={work}
-                      onApprove={approveWork}
-                      onToggleFeatured={toggleFeatured}
-                      onToggleVisibility={toggleVisibility}
-                      onDelete={handleDeleteClick}
-                    />
-                  ))}
+                <div>
+                  <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Nota:</strong> El mosaico tiene un patrón fijo de tamaños. Arrastra las imágenes para cambiar su posición en el mosaico.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {localWorks.map((work, index) => (
+                      <SortableMosaicItem
+                        key={work.id}
+                        work={work}
+                        index={index}
+                        onApprove={approveWork}
+                        onToggleFeatured={toggleFeatured}
+                        onToggleVisibility={toggleVisibility}
+                        onDelete={handleDeleteClick}
+                      />
+                    ))}
+                  </div>
                 </div>
               ) : (
                 /* Vista de Lista - con más detalles */

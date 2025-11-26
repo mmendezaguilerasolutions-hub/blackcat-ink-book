@@ -34,6 +34,18 @@ const PortfolioGallery = () => {
     };
   }, [loadedImages]);
 
+  // Patrón fijo de tamaños del mosaico (se repite)
+  const MOSAIC_PATTERN = [
+    'large',   // 0: 2x2
+    'medium',  // 1: 1x1
+    'medium',  // 2: 1x1
+    'tall',    // 3: 1x2
+    'medium',  // 4: 1x1
+    'wide',    // 5: 2x1
+    'medium',  // 6: 1x1
+    'medium',  // 7: 1x1
+  ];
+
   const getSizeClasses = (size: string) => {
     switch (size) {
       case 'large':
@@ -121,11 +133,14 @@ const PortfolioGallery = () => {
             <>
               {/* Mosaic Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-                {works.map((work, index) => (
+                {works.map((work, index) => {
+                  // Usar el patrón fijo según la posición
+                  const patternSize = MOSAIC_PATTERN[index % MOSAIC_PATTERN.length];
+                  return (
                   <div
                     key={work.id}
                     className={`group relative overflow-hidden rounded-lg ${getSizeClasses(
-                      work.size
+                      patternSize
                     )} cursor-pointer animate-fade-in`}
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => openLightbox(index)}
@@ -163,7 +178,8 @@ const PortfolioGallery = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="text-center">
