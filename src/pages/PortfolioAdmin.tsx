@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePortfolioAdmin } from '@/hooks/usePortfolioWorks';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { ArrowLeft, Check, X, Star, StarOff, Trash2, RefreshCw, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { ArrowLeft, Check, X, Star, StarOff, Trash2, RefreshCw, Eye, EyeOff, GripVertical, LayoutGrid, List } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -63,7 +64,7 @@ function SortableWorkCard({ work, onApprove, onToggleFeatured, onToggleVisibilit
           <Button
             variant="ghost"
             size="icon"
-            className="cursor-grab active:cursor-grabbing bg-background/80 hover:bg-background/90"
+            className="cursor-grab active:cursor-grabbing bg-primary text-primary-foreground hover:bg-primary/90"
             {...attributes}
             {...listeners}
           >
@@ -171,6 +172,136 @@ function SortableWorkCard({ work, onApprove, onToggleFeatured, onToggleVisibilit
   );
 }
 
+// Componente de mosaico sortable
+function SortableMosaicItem({ work, onApprove, onToggleFeatured, onToggleVisibility, onDelete }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: work.id });
+
+  const getSizeClasses = (size: string) => {
+    switch (size) {
+      case 'large':
+        return 'col-span-2 row-span-2';
+      case 'tall':
+        return 'row-span-2';
+      case 'wide':
+        return 'col-span-2';
+      default:
+        return '';
+    }
+  };
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative overflow-hidden rounded-lg ${getSizeClasses(work.size)} cursor-pointer`}
+    >
+      <img
+        src={work.image_url}
+        alt={work.title || work.style}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+      />
+      
+      {/* Badges de estado */}
+      <div className="absolute top-2 right-2 flex flex-col gap-1">
+        {work.is_approved && (
+          <Badge className="bg-green-600 text-primary-foreground">Aprobado</Badge>
+        )}
+        {work.is_featured && (
+          <Badge className="bg-yellow-600 text-primary-foreground">Destacado</Badge>
+        )}
+        {!work.is_visible_in_landing && (
+          <Badge className="bg-red-600 text-primary-foreground">Oculto</Badge>
+        )}
+      </div>
+
+      {/* Drag handle */}
+      <div className="absolute top-2 left-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="cursor-grab active:cursor-grabbing bg-primary text-primary-foreground hover:bg-primary/90"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Overlay con información y acciones */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
+        <div className="flex justify-end gap-1">
+          <Button
+            size="icon"
+            variant={work.is_approved ? 'outline' : 'default'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onApprove(work.id, !work.is_approved);
+            }}
+            className="h-8 w-8"
+          >
+            {work.is_approved ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFeatured(work.id, !work.is_featured);
+            }}
+            className="h-8 w-8"
+          >
+            {work.is_featured ? <StarOff className="h-4 w-4" /> : <Star className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVisibility(work.id, !work.is_visible_in_landing);
+            }}
+            className="h-8 w-8"
+          >
+            {work.is_visible_in_landing ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(work.id);
+            }}
+            className="h-8 w-8"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+        
+        <div>
+          <div className="text-sm font-semibold text-foreground">{work.style}</div>
+          {work.artist && (
+            <div className="text-xs text-muted-foreground">
+              por {work.artist.display_name}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioAdmin() {
   const navigate = useNavigate();
   const { isSuperAdmin, loading: checkingRole } = useSuperAdmin();
@@ -178,6 +309,7 @@ export default function PortfolioAdmin() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workToDelete, setWorkToDelete] = useState<string | null>(null);
   const [localWorks, setLocalWorks] = useState(works);
+  const [viewMode, setViewMode] = useState<'mosaic' | 'list'>('mosaic');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -311,6 +443,20 @@ export default function PortfolioAdmin() {
           </Card>
         </div>
 
+        {/* Selector de vista */}
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'mosaic' | 'list')} className="mb-6">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+            <TabsTrigger value="mosaic" className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Vista Mosaico
+            </TabsTrigger>
+            <TabsTrigger value="list" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Vista Lista
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {loading && works.length === 0 ? (
           <div className="flex justify-center items-center py-12">
             <div className="text-center">
@@ -336,18 +482,35 @@ export default function PortfolioAdmin() {
               items={localWorks.map((w) => w.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {localWorks.map((work) => (
-                  <SortableWorkCard
-                    key={work.id}
-                    work={work}
-                    onApprove={approveWork}
-                    onToggleFeatured={toggleFeatured}
-                    onToggleVisibility={toggleVisibility}
-                    onDelete={handleDeleteClick}
-                  />
-                ))}
-              </div>
+              {viewMode === 'mosaic' ? (
+                /* Vista de Mosaico - como se ve en el landing */
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {localWorks.map((work) => (
+                    <SortableMosaicItem
+                      key={work.id}
+                      work={work}
+                      onApprove={approveWork}
+                      onToggleFeatured={toggleFeatured}
+                      onToggleVisibility={toggleVisibility}
+                      onDelete={handleDeleteClick}
+                    />
+                  ))}
+                </div>
+              ) : (
+                /* Vista de Lista - con más detalles */
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {localWorks.map((work) => (
+                    <SortableWorkCard
+                      key={work.id}
+                      work={work}
+                      onApprove={approveWork}
+                      onToggleFeatured={toggleFeatured}
+                      onToggleVisibility={toggleVisibility}
+                      onDelete={handleDeleteClick}
+                    />
+                  ))}
+                </div>
+              )}
             </SortableContext>
           </DndContext>
         )}
