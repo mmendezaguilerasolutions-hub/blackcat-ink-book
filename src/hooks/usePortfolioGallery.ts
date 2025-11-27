@@ -115,13 +115,13 @@ export function useMyPortfolio() {
       const filePath = `original/${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('portfolio')
+        .from('portfolio-gallery')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('portfolio')
+        .from('portfolio-gallery')
         .getPublicUrl(filePath);
 
       // Guardar en BD
