@@ -153,6 +153,41 @@ export type Database = {
           },
         ]
       }
+      artist_permissions: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          feature_name: string
+          id: number
+          is_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          feature_name: string
+          id?: never
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          feature_name?: string
+          id?: never
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_permissions_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_public_info: {
         Row: {
           avatar_url: string | null
@@ -231,6 +266,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "artist_services_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_gallery: {
+        Row: {
+          artist_id: string | null
+          created_at: string | null
+          created_by: string | null
+          display_order: number | null
+          id: number
+          image_url: string
+          is_active: boolean | null
+          size: string | null
+          style: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          id?: never
+          image_url: string
+          is_active?: boolean | null
+          size?: string | null
+          style?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          display_order?: number | null
+          id?: never
+          image_url?: string
+          is_active?: boolean | null
+          size?: string | null
+          style?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_gallery_artist_id_fkey"
             columns: ["artist_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -374,6 +456,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      artist_can_manage_portfolio: {
+        Args: { artist_id_param: string }
+        Returns: boolean
+      }
       get_available_slots: {
         Args: {
           p_artist_id: string
@@ -398,6 +484,27 @@ export type Database = {
           slot_count: number
         }[]
       }
+      get_portfolio_gallery: {
+        Args: {
+          filter_artist_id?: string
+          filter_style?: string
+          include_inactive?: boolean
+          limit_count?: number
+          offset_count?: number
+          search_text?: string
+        }
+        Returns: {
+          artist_id: string
+          artist_name: string
+          created_at: string
+          display_order: number
+          id: number
+          image_url: string
+          is_active: boolean
+          size: string
+          style: string
+        }[]
+      }
       get_users_with_roles: {
         Args: never
         Returns: {
@@ -416,6 +523,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      update_portfolio_order: {
+        Args: { image_orders: Json }
+        Returns: undefined
       }
     }
     Enums: {

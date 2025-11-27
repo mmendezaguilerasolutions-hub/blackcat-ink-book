@@ -1,14 +1,71 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { usePortfolioWorks } from '@/hooks/usePortfolioWorks';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePortfolioGallery, type PortfolioImage, type PortfolioFilters } from '@/hooks/usePortfolioGallery';
 import { PortfolioLightbox } from '@/components/portfolio/PortfolioLightbox';
+import { Search, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const PortfolioGallery = () => {
-  const { works, loading } = usePortfolioWorks();
+  // Filtros
+  const [filters, setFilters] = useState<PortfolioFilters>({});
+  const [searchText, setSearchText] = useState('');
+  const [selectedArtist, setSelectedArtist] = useState<string>('all');
+  const [selectedStyle, setSelectedStyle] = useState<string>('all');
+  const [artists, setArtists] = useState<Array<{ id: string; name: string }>>([]);
+  const [styles, setStyles] = useState<string[]>([]);
+
+  // Portfolio data
+  const { images, loading } = usePortfolioGallery(filters);
+  
+  // Lightbox
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  
+  // Lazy loading
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // Cargar artistas para filtro
+  useEffect(() => {
+    const fetchArtists = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .order('display_name');
+      
+      if (data) {
+        setArtists(data.map(p => ({ id: p.id, name: p.display_name })));
+      }
+    };
+    fetchArtists();
+  }, []);
+
+  // Extraer estilos únicos de las imágenes
+  useEffect(() => {
+    const uniqueStyles = [...new Set(images.map(img => img.style).filter(Boolean))];
+    setStyles(uniqueStyles as string[]);
+  }, [images]);
+
+  // Aplicar filtros
+  useEffect(() => {
+    const newFilters: PortfolioFilters = {};
+    
+    if (selectedArtist && selectedArtist !== 'all') {
+      newFilters.artist_id = selectedArtist;
+    }
+    
+    if (selectedStyle && selectedStyle !== 'all') {
+      newFilters.style = selectedStyle;
+    }
+    
+    if (searchText.trim()) {
+      newFilters.search_text = searchText.trim();
+    }
+    
+    setFilters(newFilters);
+  }, [selectedArtist, selectedStyle, searchText]);
 
   useEffect(() => {
     // Intersection Observer para lazy loading
@@ -69,11 +126,19 @@ const PortfolioGallery = () => {
   };
 
   const nextImage = () => {
-    setLightboxIndex((prev) => (prev + 1) % works.length);
+    setLightboxIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
-    setLightboxIndex((prev) => (prev - 1 + works.length) % works.length);
+    setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const hasActiveFilters = selectedArtist !== 'all' || selectedStyle !== 'all' || searchText.trim() !== '';
+
+  const clearFilters = () => {
+    setSelectedArtist('all');
+    setSelectedStyle('all');
+    setSearchText('');
   };
 
   const scrollToContact = () => {
@@ -114,7 +179,7 @@ const PortfolioGallery = () => {
     <>
       <section id="portfolio" className="section">
         <div className="container">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4">
               Nuestro <span className="text-accent">Portfolio</span>
             </h2>
@@ -123,17 +188,85 @@ const PortfolioGallery = () => {
             </p>
           </div>
 
-          {works.length === 0 ? (
+          {/* Filtros */}
+          <div className="mb-8 p-4 bg-muted/20 rounded-lg border border-border/50">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-muted-foreground" />
+              <h3 className="font-semibold">Filtrar trabajos</h3>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Búsqueda */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por artista o estilo..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filtro por artista */}
+              <Select value={selectedArtist} onValueChange={setSelectedArtist}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los artistas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los artistas</SelectItem>
+                  {artists.map((artist) => (
+                    <SelectItem key={artist.id} value={artist.id}>
+                      {artist.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Filtro por estilo */}
+              <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los estilos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estilos</SelectItem>
+                  {styles.map((style) => (
+                    <SelectItem key={style} value={style}>
+                      {style}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Contador de resultados */}
+            <div className="mt-3 text-sm text-muted-foreground">
+              {loading ? (
+                'Cargando...'
+              ) : (
+                `${images.length} trabajo${images.length !== 1 ? 's' : ''} encontrado${images.length !== 1 ? 's' : ''}`
+              )}
+            </div>
+          </div>
+
+          {images.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
-                Aún no hay trabajos en el portfolio
+                {hasActiveFilters 
+                  ? 'No se encontraron trabajos con los filtros seleccionados'
+                  : 'Aún no hay trabajos en el portfolio'
+                }
               </p>
             </div>
           ) : (
             <>
               {/* Mosaic Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-                {works.map((work, index) => {
+                {images.map((work, index) => {
                   // Usar el patrón fijo según la posición
                   const patternSize = MOSAIC_PATTERN[index % MOSAIC_PATTERN.length];
                   return (
@@ -152,7 +285,7 @@ const PortfolioGallery = () => {
                     }}
                     tabIndex={0}
                     role="button"
-                    aria-label={`Ver trabajo: ${work.style} por ${work.artist?.display_name}`}
+                    aria-label={`Ver trabajo: ${work.style || 'desconocido'} por ${work.artist_name || 'artista'}`}
                   >
                     <img
                       ref={(el) => {
@@ -161,7 +294,7 @@ const PortfolioGallery = () => {
                         }
                       }}
                       data-src={work.image_url}
-                      alt={`Tatuaje ${work.style} por ${work.artist?.display_name}`}
+                      alt={`Tatuaje ${work.style || 'desconocido'} por ${work.artist_name || 'artista'}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
                     />
@@ -170,9 +303,9 @@ const PortfolioGallery = () => {
                         <div className="text-sm font-semibold text-accent">
                           {work.style}
                         </div>
-                        {work.artist && (
+                        {work.artist_name && (
                           <div className="text-xs text-muted-foreground">
-                            por {work.artist.display_name}
+                            por {work.artist_name}
                           </div>
                         )}
                       </div>
@@ -200,7 +333,7 @@ const PortfolioGallery = () => {
       {/* Lightbox */}
       {lightboxOpen && (
         <PortfolioLightbox
-          images={works}
+          images={images as any}
           currentIndex={lightboxIndex}
           onClose={closeLightbox}
           onNext={nextImage}
