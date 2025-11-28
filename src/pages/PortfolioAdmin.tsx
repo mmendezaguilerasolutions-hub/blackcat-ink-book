@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePortfolioAdmin } from '@/hooks/usePortfolioGallery';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Button } from '@/components/ui/button';
@@ -23,9 +24,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Eye, EyeOff, Trash2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, EyeOff, Trash2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import type { PortfolioImage } from '@/hooks/usePortfolioGallery';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Patrón fijo de 14 posiciones del mosaico
 const MOSAIC_POSITIONS = [
@@ -52,20 +70,143 @@ const SIZE_LABELS = {
   medium: 'Mediano (1x1)',
 };
 
+// Componente sortable para cada fila de la tabla
+interface SortableRowProps {
+  position: number;
+  size: 'large' | 'wide' | 'tall' | 'medium';
+  image: PortfolioImage | undefined;
+  onUnassign: (imageId: number) => void;
+}
+
+function SortableRow({ position, size, image, onUnassign }: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: position, disabled: !image });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell className="font-mono font-bold">
+        {image && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="cursor-grab active:cursor-grabbing h-6 w-6"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4" />
+            </Button>
+            {position}
+          </div>
+        )}
+        {!image && position}
+      </TableCell>
+      <TableCell>
+        <Badge variant="outline">{SIZE_LABELS[size]}</Badge>
+      </TableCell>
+      <TableCell>
+        {image ? (
+          <div className="flex items-center gap-3">
+            <img 
+              src={image.image_url} 
+              alt={`Posición ${position}`}
+              className="w-16 h-16 object-cover rounded"
+            />
+            <div>
+              <p className="font-medium text-sm">{image.style || 'Sin estilo'}</p>
+              <p className="text-xs text-muted-foreground">ID: {image.id}</p>
+            </div>
+          </div>
+        ) : (
+          <span className="text-muted-foreground italic">Vacía</span>
+        )}
+      </TableCell>
+      <TableCell>
+        {image?.artist_name || '-'}
+      </TableCell>
+      <TableCell>
+        {image ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onUnassign(image.id)}
+          >
+            <EyeOff className="w-4 h-4 mr-1" />
+            Quitar
+          </Button>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function PortfolioAdmin() {
-  const { images, loading, updateImage, deleteImage } = usePortfolioAdmin();
+  const navigate = useNavigate();
+  const { images, loading, updateImage, deleteImage, reorderImages } = usePortfolioAdmin();
   const { isSuperAdmin, loading: loadingAdmin } = useSuperAdmin();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<number | null>(null);
+  const [localPositions, setLocalPositions] = useState<typeof MOSAIC_POSITIONS>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Sincronizar posiciones locales
+  useEffect(() => {
+    setLocalPositions(MOSAIC_POSITIONS);
+  }, []);
 
   // Crear una estructura de 14 posiciones con las imágenes asignadas
-  const positionsWithImages = MOSAIC_POSITIONS.map(pos => {
+  const positionsWithImages = localPositions.map(pos => {
     const image = images.find(img => img.display_order === pos.position && img.is_active);
     return {
       ...pos,
       image
     };
   });
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localPositions.findIndex(p => p.position === active.id);
+      const newIndex = localPositions.findIndex(p => p.position === over.id);
+
+      // Solo reordenar si ambas posiciones tienen imágenes
+      const oldPos = positionsWithImages[oldIndex];
+      const newPos = positionsWithImages[newIndex];
+
+      if (oldPos.image && newPos.image) {
+        // Intercambiar las imágenes entre posiciones
+        try {
+          await updateImage(oldPos.image.id, { display_order: newPos.position });
+          await updateImage(newPos.image.id, { display_order: oldPos.position });
+          toast.success('Posiciones intercambiadas');
+        } catch (error) {
+          console.error('Error intercambiando posiciones:', error);
+          toast.error('Error al reordenar');
+        }
+      }
+    }
+  };
 
   const handleAssignImage = async (position: number, imageId: number) => {
     try {
@@ -142,11 +283,23 @@ export default function PortfolioAdmin() {
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
       {/* Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate('/dashboard')}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Gestión del Mosaico Portfolio</h1>
+          <p className="text-muted-foreground">
+            El mosaico tiene 14 posiciones fijas. Arrastra para reordenar.
+          </p>
+        </div>
+      </div>
+
       <div>
-        <h1 className="text-4xl font-bold mb-2">Gestión del Mosaico Portfolio</h1>
-        <p className="text-muted-foreground mb-6">
-          El mosaico tiene 14 posiciones fijas. Asigna imágenes a cada posición.
-        </p>
         
         <Card className="p-4 mb-6">
           <p className="text-sm text-muted-foreground">Posiciones ocupadas en el mosaico</p>
@@ -154,65 +307,46 @@ export default function PortfolioAdmin() {
         </Card>
       </div>
 
-      {/* Tabla de posiciones del mosaico */}
+      {/* Tabla de posiciones del mosaico con drag and drop */}
       <Card>
         <div className="p-6">
           <h2 className="text-2xl font-bold mb-4">Posiciones del Mosaico</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-24">Posición</TableHead>
-                <TableHead className="w-32">Tamaño</TableHead>
-                <TableHead>Imagen Asignada</TableHead>
-                <TableHead>Artista</TableHead>
-                <TableHead className="w-32">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {positionsWithImages.map(({ position, size, image }) => (
-                <TableRow key={position}>
-                  <TableCell className="font-mono font-bold">{position}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{SIZE_LABELS[size]}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {image ? (
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={image.image_url} 
-                          alt={`Posición ${position}`}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                        <div>
-                          <p className="font-medium text-sm">{image.style || 'Sin estilo'}</p>
-                          <p className="text-xs text-muted-foreground">ID: {image.id}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground italic">Vacía</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {image?.artist_name || '-'}
-                  </TableCell>
-                  <TableCell>
-                    {image ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleUnassignPosition(image.id)}
-                      >
-                        <EyeOff className="w-4 h-4 mr-1" />
-                        Quitar
-                      </Button>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">-</span>
-                    )}
-                  </TableCell>
+          <p className="text-sm text-muted-foreground mb-4">
+            Arrastra las filas con imágenes para intercambiar posiciones
+          </p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-24">Posición</TableHead>
+                  <TableHead className="w-32">Tamaño</TableHead>
+                  <TableHead>Imagen Asignada</TableHead>
+                  <TableHead>Artista</TableHead>
+                  <TableHead className="w-32">Acciones</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <SortableContext
+                items={localPositions.map(p => p.position)}
+                strategy={verticalListSortingStrategy}
+              >
+                <TableBody>
+                  {positionsWithImages.map(({ position, size, image }) => (
+                    <SortableRow
+                      key={position}
+                      position={position}
+                      size={size}
+                      image={image}
+                      onUnassign={handleUnassignPosition}
+                    />
+                  ))}
+                </TableBody>
+              </SortableContext>
+            </Table>
+          </DndContext>
         </div>
       </Card>
 
