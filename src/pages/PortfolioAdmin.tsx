@@ -1,30 +1,19 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePortfolioAdmin } from '@/hooks/usePortfolioWorks';
+import React, { useState } from 'react';
+import { usePortfolioAdmin } from '@/hooks/usePortfolioGallery';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
-import { ArrowLeft, Check, X, Star, StarOff, Trash2, RefreshCw, Eye, EyeOff, GripVertical, LayoutGrid, List } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -34,316 +23,93 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Eye, EyeOff, Trash2, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import type { PortfolioImage } from '@/hooks/usePortfolioGallery';
 
-// Componente individual de trabajo sortable
-function SortableWorkCard({ work, onApprove, onToggleFeatured, onToggleVisibility, onDelete }: any) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: work.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <Card ref={setNodeRef} style={style} className="overflow-hidden">
-      <div className="relative aspect-square">
-        <img
-          src={work.image_url}
-          alt={work.title || work.style}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-2 left-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="cursor-grab active:cursor-grabbing bg-primary text-primary-foreground hover:bg-primary/90"
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-5 w-5" />
-          </Button>
-        </div>
-        <div className="absolute top-2 right-2 flex flex-col gap-2">
-          {work.is_approved && (
-            <Badge variant="default" className="bg-green-600">
-              Aprobado
-            </Badge>
-          )}
-          {work.is_featured && (
-            <Badge variant="default" className="bg-yellow-600">
-              Destacado
-            </Badge>
-          )}
-          {!work.is_visible_in_landing && (
-            <Badge variant="default" className="bg-red-600">
-              Oculto
-            </Badge>
-          )}
-        </div>
-      </div>
-      <CardHeader>
-        <CardTitle className="text-lg">{work.style}</CardTitle>
-        <CardDescription>
-          por {work.artist?.display_name || 'Desconocido'}
-        </CardDescription>
-        {work.title && (
-          <p className="text-sm text-muted-foreground mt-1">{work.title}</p>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Badge variant="outline">{work.size}</Badge>
-          <span>•</span>
-          <span>{new Date(work.created_at).toLocaleDateString()}</span>
-        </div>
-
-        {/* Acciones */}
-        <div className="grid grid-cols-2 gap-2 pt-2">
-          <Button
-            variant={work.is_approved ? 'outline' : 'default'}
-            size="sm"
-            onClick={() => onApprove(work.id, !work.is_approved)}
-          >
-            {work.is_approved ? (
-              <>
-                <X className="h-4 w-4 mr-1" />
-                Rechazar
-              </>
-            ) : (
-              <>
-                <Check className="h-4 w-4 mr-1" />
-                Aprobar
-              </>
-            )}
-          </Button>
-          <Button
-            variant={work.is_visible_in_landing ? 'outline' : 'default'}
-            size="sm"
-            onClick={() => onToggleVisibility(work.id, !work.is_visible_in_landing)}
-          >
-            {work.is_visible_in_landing ? (
-              <>
-                <EyeOff className="h-4 w-4 mr-1" />
-                Ocultar
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4 mr-1" />
-                Mostrar
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onToggleFeatured(work.id, !work.is_featured)}
-          >
-            {work.is_featured ? (
-              <>
-                <StarOff className="h-4 w-4 mr-1" />
-                Normal
-              </>
-            ) : (
-              <>
-                <Star className="h-4 w-4 mr-1" />
-                Destacar
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDelete(work.id)}
-          >
-            <Trash2 className="h-4 w-4 text-destructive mr-1" />
-            Eliminar
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Patrón fijo de tamaños del mosaico (se repite)
-const MOSAIC_PATTERN = [
-  'large',   // 0: 2x2
-  'medium',  // 1: 1x1
-  'medium',  // 2: 1x1
-  'tall',    // 3: 1x2
-  'medium',  // 4: 1x1
-  'wide',    // 5: 2x1
-  'medium',  // 6: 1x1
-  'medium',  // 7: 1x1
+// Patrón fijo de 14 posiciones del mosaico
+const MOSAIC_POSITIONS = [
+  { position: 0, size: 'large' as const },
+  { position: 1, size: 'medium' as const },
+  { position: 2, size: 'tall' as const },
+  { position: 3, size: 'wide' as const },
+  { position: 4, size: 'medium' as const },
+  { position: 5, size: 'large' as const },
+  { position: 6, size: 'medium' as const },
+  { position: 7, size: 'tall' as const },
+  { position: 8, size: 'wide' as const },
+  { position: 9, size: 'medium' as const },
+  { position: 10, size: 'medium' as const },
+  { position: 11, size: 'large' as const },
+  { position: 12, size: 'tall' as const },
+  { position: 13, size: 'medium' as const },
 ];
 
-// Componente de mosaico sortable
-function SortableMosaicItem({ work, index, onApprove, onToggleFeatured, onToggleVisibility, onDelete }: any) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: work.id });
+const SIZE_LABELS = {
+  large: 'Grande (2x2)',
+  wide: 'Ancho (2x1)',
+  tall: 'Alto (1x2)',
+  medium: 'Mediano (1x1)',
+};
 
-  // Obtener el tamaño fijo según la posición en el patrón
-  const patternSize = MOSAIC_PATTERN[index % MOSAIC_PATTERN.length];
+export default function PortfolioAdmin() {
+  const { images, loading, updateImage, deleteImage } = usePortfolioAdmin();
+  const { isSuperAdmin, loading: loadingAdmin } = useSuperAdmin();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null);
 
-  const getSizeClasses = (size: string) => {
-    switch (size) {
-      case 'large':
-        return 'col-span-2 row-span-2';
-      case 'tall':
-        return 'row-span-2';
-      case 'wide':
-        return 'col-span-2';
-      default:
-        return '';
+  // Crear una estructura de 14 posiciones con las imágenes asignadas
+  const positionsWithImages = MOSAIC_POSITIONS.map(pos => {
+    const image = images.find(img => img.display_order === pos.position && img.is_active);
+    return {
+      ...pos,
+      image
+    };
+  });
+
+  const handleAssignImage = async (position: number, imageId: number) => {
+    try {
+      await updateImage(imageId, { 
+        display_order: position,
+        is_active: true 
+      });
+      toast.success('Imagen asignada a la posición');
+    } catch (error) {
+      console.error('Error asignando imagen:', error);
     }
   };
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+  const handleUnassignPosition = async (imageId: number) => {
+    try {
+      await updateImage(imageId, { 
+        is_active: false 
+      });
+      toast.success('Imagen removida del mosaico');
+    } catch (error) {
+      console.error('Error removiendo imagen:', error);
+    }
   };
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`group relative overflow-hidden rounded-lg ${getSizeClasses(patternSize)} cursor-pointer`}
-    >
-      <img
-        src={work.image_url}
-        alt={work.title || work.style}
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-      />
-      
-      {/* Badges de estado */}
-      <div className="absolute top-2 right-2 flex flex-col gap-1">
-        {work.is_approved && (
-          <Badge className="bg-green-600 text-primary-foreground">Aprobado</Badge>
-        )}
-        {work.is_featured && (
-          <Badge className="bg-yellow-600 text-primary-foreground">Destacado</Badge>
-        )}
-        {!work.is_visible_in_landing && (
-          <Badge className="bg-red-600 text-primary-foreground">Oculto</Badge>
-        )}
-      </div>
+  const confirmDelete = (id: number) => {
+    setImageToDelete(id);
+    setDeleteDialogOpen(true);
+  };
 
-      {/* Drag handle */}
-      <div className="absolute top-2 left-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="cursor-grab active:cursor-grabbing bg-primary text-primary-foreground hover:bg-primary/90"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-5 w-5" />
-        </Button>
-      </div>
+  const handleDelete = async () => {
+    if (imageToDelete) {
+      await deleteImage(imageToDelete);
+      setDeleteDialogOpen(false);
+      setImageToDelete(null);
+    }
+  };
 
-      {/* Overlay con información y acciones */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4">
-        <div className="flex justify-end gap-1">
-          <Button
-            size="icon"
-            variant={work.is_approved ? 'outline' : 'default'}
-            onClick={(e) => {
-              e.stopPropagation();
-              onApprove(work.id, !work.is_approved);
-            }}
-            className="h-8 w-8"
-          >
-            {work.is_approved ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFeatured(work.id, !work.is_featured);
-            }}
-            className="h-8 w-8"
-          >
-            {work.is_featured ? <StarOff className="h-4 w-4" /> : <Star className="h-4 w-4" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleVisibility(work.id, !work.is_visible_in_landing);
-            }}
-            className="h-8 w-8"
-          >
-            {work.is_visible_in_landing ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(work.id);
-            }}
-            className="h-8 w-8"
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-        
-        <div>
-          <div className="text-sm font-semibold text-foreground">{work.style}</div>
-          {work.artist && (
-            <div className="text-xs text-muted-foreground">
-              por {work.artist.display_name}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function PortfolioAdmin() {
-  const navigate = useNavigate();
-  const { isSuperAdmin, loading: checkingRole } = useSuperAdmin();
-  const { works, loading, approveWork, toggleFeatured, deleteWork, toggleVisibility, reorderWorks, refetch } = usePortfolioAdmin();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workToDelete, setWorkToDelete] = useState<string | null>(null);
-  const [localWorks, setLocalWorks] = useState(works);
-  const [viewMode, setViewMode] = useState<'mosaic' | 'list'>('mosaic');
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  // Sincronizar works con localWorks cuando cambien
-  useEffect(() => {
-    setLocalWorks(works);
-  }, [works]);
-
-  if (checkingRole) {
+  if (loading || loadingAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando permisos...</p>
+      <div className="container mx-auto py-8 px-4">
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
         </div>
       </div>
     );
@@ -351,206 +117,168 @@ export default function PortfolioAdmin() {
 
   if (!isSuperAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Acceso Denegado</h1>
-          <p className="text-muted-foreground mb-4">
-            No tienes permisos para acceder a esta página
-          </p>
-          <Button onClick={() => navigate('/dashboard')}>
-            Volver al Dashboard
-          </Button>
-        </div>
+      <div className="container mx-auto py-8 px-4">
+        <Card className="p-8 text-center">
+          <p className="text-lg">No tienes permisos para acceder a esta página</p>
+        </Card>
       </div>
     );
   }
 
-
-  const handleDeleteClick = (workId: string) => {
-    setWorkToDelete(workId);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (workToDelete) {
-      await deleteWork(workToDelete);
-      setDeleteDialogOpen(false);
-      setWorkToDelete(null);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setLocalWorks((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        
-        // Actualizar el orden en el backend
-        reorderWorks(newOrder);
-        
-        return newOrder;
-      });
-    }
-  };
+  const activeInMosaic = images.filter(img => 
+    img.is_active && 
+    img.display_order !== null && 
+    img.display_order >= 0 && 
+    img.display_order < 14
+  ).length;
+  
+  const availableImages = images.filter(img => 
+    !img.is_active || 
+    img.display_order === null || 
+    img.display_order < 0 || 
+    img.display_order >= 14
+  );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/dashboard')}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Gestión de Portfolio</h1>
-              <p className="text-muted-foreground mt-1">
-                Administra los trabajos mostrados en la landing
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={refetch}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-
-        {/* Estadísticas */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total de Trabajos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{works.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Aprobados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {works.filter((w) => w.is_approved).length}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Destacados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {works.filter((w) => w.is_featured).length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Selector de vista */}
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'mosaic' | 'list')} className="mb-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-            <TabsTrigger value="mosaic" className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Vista Mosaico
-            </TabsTrigger>
-            <TabsTrigger value="list" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              Vista Lista
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {loading && works.length === 0 ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando trabajos...</p>
-            </div>
-          </div>
-        ) : works.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                No hay trabajos en el portfolio todavía
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={localWorks.map((w) => w.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {viewMode === 'mosaic' ? (
-                /* Vista de Mosaico - como se ve en el landing */
-                <div>
-                  <div className="mb-4 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Nota:</strong> El mosaico tiene un patrón fijo de tamaños. Arrastra las imágenes para cambiar su posición en el mosaico.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {localWorks.map((work, index) => (
-                      <SortableMosaicItem
-                        key={work.id}
-                        work={work}
-                        index={index}
-                        onApprove={approveWork}
-                        onToggleFeatured={toggleFeatured}
-                        onToggleVisibility={toggleVisibility}
-                        onDelete={handleDeleteClick}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                /* Vista de Lista - con más detalles */
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {localWorks.map((work) => (
-                    <SortableWorkCard
-                      key={work.id}
-                      work={work}
-                      onApprove={approveWork}
-                      onToggleFeatured={toggleFeatured}
-                      onToggleVisibility={toggleVisibility}
-                      onDelete={handleDeleteClick}
-                    />
-                  ))}
-                </div>
-              )}
-            </SortableContext>
-          </DndContext>
-        )}
+    <div className="container mx-auto py-8 px-4 space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold mb-2">Gestión del Mosaico Portfolio</h1>
+        <p className="text-muted-foreground mb-6">
+          El mosaico tiene 14 posiciones fijas. Asigna imágenes a cada posición.
+        </p>
+        
+        <Card className="p-4 mb-6">
+          <p className="text-sm text-muted-foreground">Posiciones ocupadas en el mosaico</p>
+          <p className="text-3xl font-bold">{activeInMosaic} / 14</p>
+        </Card>
       </div>
+
+      {/* Tabla de posiciones del mosaico */}
+      <Card>
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4">Posiciones del Mosaico</h2>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-24">Posición</TableHead>
+                <TableHead className="w-32">Tamaño</TableHead>
+                <TableHead>Imagen Asignada</TableHead>
+                <TableHead>Artista</TableHead>
+                <TableHead className="w-32">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {positionsWithImages.map(({ position, size, image }) => (
+                <TableRow key={position}>
+                  <TableCell className="font-mono font-bold">{position}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{SIZE_LABELS[size]}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {image ? (
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={image.image_url} 
+                          alt={`Posición ${position}`}
+                          className="w-16 h-16 object-cover rounded"
+                        />
+                        <div>
+                          <p className="font-medium text-sm">{image.style || 'Sin estilo'}</p>
+                          <p className="text-xs text-muted-foreground">ID: {image.id}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground italic">Vacía</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {image?.artist_name || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {image ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUnassignPosition(image.id)}
+                      >
+                        <EyeOff className="w-4 h-4 mr-1" />
+                        Quitar
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      {/* Imágenes disponibles */}
+      <Card>
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4">Imágenes Disponibles ({availableImages.length})</h2>
+          {availableImages.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No hay imágenes disponibles</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {availableImages.map(img => (
+                <div key={img.id} className="group relative">
+                  <img 
+                    src={img.image_url} 
+                    alt={img.style || 'Imagen'}
+                    className="w-full h-32 object-cover rounded"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded flex flex-col items-center justify-center gap-2 p-2">
+                    <p className="text-white text-xs text-center">{img.artist_name}</p>
+                    <p className="text-white text-xs text-center font-medium">{img.style}</p>
+                    <select 
+                      className="text-xs rounded px-2 py-1"
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAssignImage(parseInt(e.target.value), img.id);
+                        }
+                      }}
+                      defaultValue=""
+                    >
+                      <option value="">Asignar a...</option>
+                      {positionsWithImages
+                        .filter(p => !p.image)
+                        .map(p => (
+                          <option key={p.position} value={p.position}>
+                            Pos {p.position} ({SIZE_LABELS[p.size]})
+                          </option>
+                        ))}
+                    </select>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => confirmDelete(img.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar imagen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El trabajo será eliminado permanentemente.
+              Esta acción no se puede deshacer. La imagen será eliminada permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -91,16 +91,22 @@ const PortfolioGallery = () => {
     };
   }, [loadedImages]);
 
-  // Patrón fijo de tamaños del mosaico (se repite)
-  const MOSAIC_PATTERN = [
+  // Patrón fijo de 14 posiciones del mosaico
+  const MOSAIC_PATTERN: ('large' | 'wide' | 'tall' | 'medium')[] = [
     'large',   // 0: 2x2
     'medium',  // 1: 1x1
-    'medium',  // 2: 1x1
-    'tall',    // 3: 1x2
+    'tall',    // 2: 1x2
+    'wide',    // 3: 2x1
     'medium',  // 4: 1x1
-    'wide',    // 5: 2x1
+    'large',   // 5: 2x2
     'medium',  // 6: 1x1
-    'medium',  // 7: 1x1
+    'tall',    // 7: 1x2
+    'wide',    // 8: 2x1
+    'medium',  // 9: 1x1
+    'medium',  // 10: 1x1
+    'large',   // 11: 2x2
+    'tall',    // 12: 1x2
+    'medium',  // 13: 1x1
   ];
 
   const getSizeClasses = (size: string) => {
@@ -264,16 +270,16 @@ const PortfolioGallery = () => {
             </div>
           ) : (
             <>
-              {/* Mosaic Grid */}
+              {/* Mosaic Grid - exactamente 14 posiciones */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-                {images.map((work, index) => {
-                  // Usar el patrón fijo según la posición
-                  const patternSize = MOSAIC_PATTERN[index % MOSAIC_PATTERN.length];
+                {images.slice(0, 14).map((work, index) => {
+                  // Cada imagen usa el tamaño fijo de su posición
+                  const fixedSize = MOSAIC_PATTERN[index];
                   return (
                   <div
                     key={work.id}
                     className={`group relative overflow-hidden rounded-lg ${getSizeClasses(
-                      patternSize
+                      fixedSize
                     )} cursor-pointer animate-fade-in`}
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => openLightbox(index)}
