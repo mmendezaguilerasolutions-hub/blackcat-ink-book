@@ -34,14 +34,14 @@ const PortfolioGallery = () => {
   const getSizeClasses = (size: string) => {
     switch (size) {
       case 'big':
-        return 'col-span-2 row-span-2 h-[400px]';
+        return 'col-span-2 row-span-2';
       case 'tall':
-        return 'row-span-2 h-[400px]';
+        return 'row-span-2';
       case 'wide':
-        return 'col-span-2 h-[195px]';
+        return 'col-span-2';
       case 'small':
       default:
-        return 'h-[195px]';
+        return '';
     }
   };
 
@@ -119,7 +119,7 @@ const PortfolioGallery = () => {
           ) : (
             <>
               {/* Mosaic Grid - exactamente 14 posiciones */}
-              <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[195px] gap-2 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[195px] grid-flow-dense gap-2 mb-8">
                 {images.slice(0, 14).map((work, index) => {
                   // Cada imagen usa el tamaño fijo de su posición
                   const fixedSize = MOSAIC_PATTERN[index];
