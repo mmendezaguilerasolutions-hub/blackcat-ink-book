@@ -14,33 +14,34 @@ const PortfolioGallery = () => {
   
 
   // Patrón fijo de 14 posiciones del mosaico
-  const MOSAIC_PATTERN: ('large' | 'wide' | 'tall' | 'medium')[] = [
-    'large',   // 0: 2x2
-    'medium',  // 1: 1x1
+  const MOSAIC_PATTERN: ('big' | 'wide' | 'tall' | 'small')[] = [
+    'big',     // 0: 2x2
+    'small',   // 1: 1x1
     'tall',    // 2: 1x2
     'wide',    // 3: 2x1
-    'medium',  // 4: 1x1
-    'large',   // 5: 2x2
-    'medium',  // 6: 1x1
+    'small',   // 4: 1x1
+    'big',     // 5: 2x2
+    'small',   // 6: 1x1
     'tall',    // 7: 1x2
     'wide',    // 8: 2x1
-    'medium',  // 9: 1x1
-    'medium',  // 10: 1x1
-    'large',   // 11: 2x2
+    'small',   // 9: 1x1
+    'small',   // 10: 1x1
+    'big',     // 11: 2x2
     'tall',    // 12: 1x2
-    'medium',  // 13: 1x1
+    'small',   // 13: 1x1
   ];
 
   const getSizeClasses = (size: string) => {
     switch (size) {
-      case 'large':
-        return 'col-span-2 row-span-2';
+      case 'big':
+        return 'col-span-2 row-span-2 h-[400px]';
       case 'tall':
-        return 'row-span-2';
+        return 'row-span-2 h-[400px]';
       case 'wide':
-        return 'col-span-2';
+        return 'col-span-2 h-[195px]';
+      case 'small':
       default:
-        return '';
+        return 'h-[195px]';
     }
   };
 
@@ -118,7 +119,7 @@ const PortfolioGallery = () => {
           ) : (
             <>
               {/* Mosaic Grid - exactamente 14 posiciones */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[195px] gap-2 mb-8">
                 {images.slice(0, 14).map((work, index) => {
                   // Cada imagen usa el tamaño fijo de su posición
                   const fixedSize = MOSAIC_PATTERN[index];
@@ -143,7 +144,7 @@ const PortfolioGallery = () => {
                     <img
                       src={work.image_url}
                       alt={`Tatuaje ${work.style || 'desconocido'} por ${work.artist_name || 'artista'}`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
