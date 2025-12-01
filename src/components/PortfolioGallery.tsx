@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePortfolioGallery, type PortfolioImage } from '@/hooks/usePortfolioGallery';
 import { PortfolioLightbox } from '@/components/portfolio/PortfolioLightbox';
@@ -12,34 +12,6 @@ const PortfolioGallery = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   
-  // Lazy loading
-  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-
-  useEffect(() => {
-    // Intersection Observer para lazy loading
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const img = entry.target as HTMLImageElement;
-            const src = img.dataset.src;
-            if (src && !loadedImages.has(src)) {
-              img.src = src;
-              setLoadedImages((prev) => new Set(prev).add(src));
-              observerRef.current?.unobserve(img);
-            }
-          }
-        });
-      },
-      { rootMargin: '50px' }
-    );
-
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [loadedImages]);
 
   // Patrón fijo de 14 posiciones del mosaico
   const MOSAIC_PATTERN: ('large' | 'wide' | 'tall' | 'medium')[] = [
@@ -169,12 +141,7 @@ const PortfolioGallery = () => {
                     aria-label={`Ver trabajo: ${work.style || 'desconocido'} por ${work.artist_name || 'artista'}`}
                   >
                     <img
-                      ref={(el) => {
-                        if (el && observerRef.current) {
-                          observerRef.current.observe(el);
-                        }
-                      }}
-                      data-src={work.image_url}
+                      src={work.image_url}
                       alt={`Tatuaje ${work.style || 'desconocido'} por ${work.artist_name || 'artista'}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
