@@ -47,33 +47,33 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Patrón fijo de 14 posiciones del mosaico
 const MOSAIC_POSITIONS = [
-  { position: 0, size: 'large' as const },
-  { position: 1, size: 'medium' as const },
+  { position: 0, size: 'big' as const },
+  { position: 1, size: 'small' as const },
   { position: 2, size: 'tall' as const },
   { position: 3, size: 'wide' as const },
-  { position: 4, size: 'medium' as const },
-  { position: 5, size: 'large' as const },
-  { position: 6, size: 'medium' as const },
+  { position: 4, size: 'small' as const },
+  { position: 5, size: 'big' as const },
+  { position: 6, size: 'small' as const },
   { position: 7, size: 'tall' as const },
   { position: 8, size: 'wide' as const },
-  { position: 9, size: 'medium' as const },
-  { position: 10, size: 'medium' as const },
-  { position: 11, size: 'large' as const },
+  { position: 9, size: 'small' as const },
+  { position: 10, size: 'small' as const },
+  { position: 11, size: 'big' as const },
   { position: 12, size: 'tall' as const },
-  { position: 13, size: 'medium' as const },
+  { position: 13, size: 'small' as const },
 ];
 
 const SIZE_LABELS = {
-  large: 'Grande (2x2)',
+  big: 'Grande (2x2)',
   wide: 'Ancho (2x1)',
   tall: 'Alto (1x2)',
-  medium: 'Mediano (1x1)',
+  small: 'Pequeño (1x1)',
 };
 
 // Componente sortable para cada fila de la tabla
 interface SortableRowProps {
   position: number;
-  size: 'large' | 'wide' | 'tall' | 'medium';
+  size: 'big' | 'wide' | 'tall' | 'small';
   image: PortfolioImage | undefined;
   onUnassign: (imageId: number) => void;
 }
