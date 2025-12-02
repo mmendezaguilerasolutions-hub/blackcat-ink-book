@@ -1,4 +1,31 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
 const About = () => {
+  const [imageUrl, setImageUrl] = useState<string>('https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=800&q=80');
+
+  useEffect(() => {
+    const loadImage = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('about_settings')
+          .select('image_url')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (data?.image_url) {
+          setImageUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading about image:', error);
+      }
+    };
+
+    loadImage();
+  }, []);
+
   return (
     <section id="about" className="section bg-card">
       <div className="container">
@@ -24,7 +51,7 @@ const About = () => {
           {/* Image Placeholder */}
           <div className="relative h-[400px] rounded-lg overflow-hidden">
             <img
-              src="https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=800&q=80"
+              src={imageUrl}
               alt="Interior del estudio"
               className="w-full h-full object-cover"
             />
