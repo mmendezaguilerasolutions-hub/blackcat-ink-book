@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      about_settings: {
+        Row: {
+          id: string
+          image_url: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          image_url: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          image_url?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           artist_id: string

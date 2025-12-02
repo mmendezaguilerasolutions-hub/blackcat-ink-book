@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { User, LogOut, UserPlus, Users, Calendar } from 'lucide-react';
+import { User, LogOut, UserPlus, Users, Calendar, Image } from 'lucide-react';
 
 interface Profile {
   display_name: string;
@@ -287,6 +287,13 @@ const Dashboard = () => {
                   >
                     <Users className="w-4 h-4 mr-2" />
                     Avatares
+                  </Button>
+                  <Button
+                    onClick={() => navigate('/admin/about')}
+                    className="w-full"
+                  >
+                    <Image className="w-4 h-4 mr-2" />
+                    Imagen About
                   </Button>
                   <Button
                     onClick={() => navigate('/register')}
