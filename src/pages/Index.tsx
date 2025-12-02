@@ -5,6 +5,7 @@ import PortfolioGallery from "@/components/PortfolioGallery";
 import { ArtistsCarousel } from "@/components/ArtistsCarousel";
 import About from "@/components/About";
 import Contact from "@/components/Contact";
+import ClientReviews from "@/components/ClientReviews";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
       <ArtistsCarousel />
       <About />
       <Contact />
+      <ClientReviews />
       <Footer />
     </div>
   );

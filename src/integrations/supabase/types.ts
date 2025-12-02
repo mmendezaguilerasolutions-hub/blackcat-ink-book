@@ -273,6 +273,33 @@ export type Database = {
           },
         ]
       }
+      client_reviews: {
+        Row: {
+          client_name: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          rating: number | null
+          review_text: string
+        }
+        Insert: {
+          client_name: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          rating?: number | null
+          review_text: string
+        }
+        Update: {
+          client_name?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          rating?: number | null
+          review_text?: string
+        }
+        Relationships: []
+      }
       portfolio_gallery: {
         Row: {
           artist_id: string | null
